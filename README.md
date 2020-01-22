@@ -10,6 +10,12 @@ the certificate. It uses DNS-01 challenge for verification.
 
 ## Pillar Example
 
+TODO: `acne/init.sls`
+
+Example: Creates certificate and private key in default location (e.g. `/etc/acme`).
+
+Includes other states (`nginx.service`) and reloads services on certificate changes (`nginx`).
+
 ```yaml
 states:
   - acme
@@ -25,6 +31,8 @@ acme:
 ```
 
 # State Example
+
+Uses the state modules, used by e.g. `acme/init.sls`.
 
 ```yaml
 /etc/acme/certs/example.org.key:
