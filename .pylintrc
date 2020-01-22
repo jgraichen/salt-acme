@@ -1,3 +1,6 @@
+[MESSAGES CONTROL]
+disable=import-error
+
 [VARIABLES]
 additional-builtins=__opts__, __salt__,__utils__
 
