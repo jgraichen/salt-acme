@@ -35,6 +35,21 @@ _EXAMPLE_CRT_DETAILS = {
     "serial": 30085325876401617040119254925065796666265568656,
 }
 
+_EXAMPLE_CSR_DETAILS = {
+    "algorithm": "sha384",
+    "domains": ["example.org", "example.com", "www.example.org", "www.example.com"],
+    "public_key": {
+        "curve": "secp192r1",
+        "text": (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEzHytpRZH/0nCuMoT8K8Nijw2tcpi\n"
+            "otufkOQPX+k4azNhQL/WwqZWW83A16dlhCSz\n"
+            "-----END PUBLIC KEY-----\n"
+        ),
+        "type": "ec",
+    },
+}
+
 
 def _read(path, mode="r"):
     with open(path, mode) as f:
@@ -192,9 +207,7 @@ def test_create_certificate(mods, tmpdir):
     with open(path, "rb") as f:
         crt = x509.load_pem_x509_certificate(f.read(), default_backend())
 
-    common_name = crt.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[
-        0
-    ].value
+    common_name = crt.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
     alt_names = crt.extensions.get_extension_for_class(
         x509.SubjectAlternativeName
     ).value
@@ -211,21 +224,12 @@ def test_create_certificate(mods, tmpdir):
 
 def test_read_csr(mods):
     path = "test/fixtures/example.csr"
+    assert mods["acme.read_csr"](path) == _EXAMPLE_CSR_DETAILS
 
-    assert mods["acme.read_csr"](path) == {
-        "algorithm": "sha384",
-        "domains": ["example.org", "example.com", "www.example.org", "www.example.com"],
-        "public_key": {
-            "curve": "secp192r1",
-            "text": (
-                "-----BEGIN PUBLIC KEY-----\n"
-                "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEzHytpRZH/0nCuMoT8K8Nijw2tcpi\n"
-                "otufkOQPX+k4azNhQL/WwqZWW83A16dlhCSz\n"
-                "-----END PUBLIC KEY-----\n"
-            ),
-            "type": "ec",
-        },
-    }
+
+def test_read_csr_pem(mods):
+    pem = _read("test/fixtures/example.csr")
+    assert mods["acme.read_csr"](pem) == _EXAMPLE_CSR_DETAILS
 
 
 def test_read_certificate(mods):

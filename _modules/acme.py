@@ -224,7 +224,7 @@ def read_csr(csr):
         with fopen(csr, "rb") as f:
             csr = x509.load_pem_x509_csr(f.read(), default_backend())
     else:
-        csr = x509.load_pem_x509_csr(csr.decode(), default_backend())
+        csr = x509.load_pem_x509_csr(csr.encode(), default_backend())
 
     return _read_csr(csr)
 
