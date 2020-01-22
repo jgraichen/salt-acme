@@ -1,3 +1,10 @@
+pylint:
+  image: python:3.6
+  before_script:
+    - python -m pip install pylint
+  script:
+    - pylint -j4 **/*.py
+
 .base:
   image: $IMAGE
   before_script:
