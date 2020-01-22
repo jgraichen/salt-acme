@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.cache/
+.pytest_cache/
+.eggs/
+/*.lock
+/*.egg-info
+/.env
+/.tox
+/build
+/dist
+/tmp

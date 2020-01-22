@@ -1,0 +1,9 @@
+{
+    "python.pythonPath": "/usr/bin/python3",
+    "python.formatting.provider": "black",
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.tox": true,
+        "**/.pytest_cache": true,
+    }
+}

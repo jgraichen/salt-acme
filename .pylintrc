@@ -1,0 +1,5 @@
+[VARIABLES]
+additional-builtins=__opts__, __salt__,__utils__
+
+[FORMAT]
+good-names=f,e
