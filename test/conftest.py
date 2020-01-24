@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-# pylint: disable=missing-docstring
+# pylint: disable=missing-docstring,redefined-outer-name
 
-import logging
 import os
-import sys
+import tempfile
 
 import pytest
 
@@ -11,37 +10,37 @@ import salt.config
 import salt.loader
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(os.path.join(ROOT))
 
 
-__opts__ = salt.config.client_config(os.path.join(ROOT, "test/master.yml"))
-__opts__["cachedir"] = os.path.join(ROOT, "tmp/cache")
-__opts__["pki_dir"] = os.path.join(ROOT, "tmp/pki")
-__opts__["module_dirs"] = [ROOT]
-
-__grains__ = salt.loader.grains(__opts__)
-__opts__["grains"] = __grains__
-
-__utils__ = salt.loader.utils(__opts__)
-__salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
-__runners__ = salt.loader.runner(__opts__, __salt__)
-
-logging.info('Salt Loader Information:')
-logging.info("  utils  : %s", ", ".join(__utils__.module_dirs))
-logging.info("  modules: %s", ", ".join(__salt__.module_dirs))
-logging.info("  runners: %s", ", ".join(__runners__.module_dirs))
+@pytest.yield_fixture(scope='session')
+def tmpd():
+    with tempfile.TemporaryDirectory() as d:
+        yield d
 
 
-@pytest.fixture
-def utils():
-    return __utils__
+@pytest.fixture(scope='session')
+def opts(tmpd):
+    opts = salt.config.client_config(os.path.join(ROOT, "test/master.yml"))
+    opts["cachedir"] = os.path.join(tmpd, "cache")
+    opts["pki_dir"] = os.path.join(tmpd, "pki")
+    opts["module_dirs"] = [ROOT]
+
+    grains = salt.loader.grains(opts)
+    opts["grains"] = grains
+
+    return opts
 
 
-@pytest.fixture
-def mods():
-    return __salt__
+@pytest.fixture(scope='session')
+def utils(opts):
+    return salt.loader.utils(opts)
 
 
-@pytest.fixture
-def runners():
-    return __runners__
+@pytest.fixture(scope='session')
+def mods(opts, utils):
+    return salt.loader.minion_mods(opts, utils=utils)
+
+
+@pytest.fixture(scope='session')
+def runners(opts, mods):
+    return salt.loader.runner(opts, mods)
