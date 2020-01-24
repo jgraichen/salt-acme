@@ -5,7 +5,6 @@ Manage TLS keys and certificates with ACME
 :depends: cryptography
 """
 
-import binascii
 import datetime
 import os
 
@@ -16,14 +15,14 @@ from salt.exceptions import (
 )
 
 try:
-    from salt.utils.files import fopen, fpopen
+    from salt.utils.files import fopen as _fopen, fpopen as _fpopen
 except ImportError:
-    from salt.utils import fopen, fpopen
+    from salt.utils import fopen as _fopen, fpopen as _fpopen
 
 try:
     from cryptography import x509
 
-    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.backends import default_backend as _default_backend
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa, ec
 
@@ -69,7 +68,7 @@ def create_private_key(path, type="ec", size=4096, curve="prime256v1"):
 
     if type == "rsa":
         key = rsa.generate_private_key(
-            public_exponent=65537, key_size=size, backend=default_backend()
+            public_exponent=65537, key_size=size, backend=_default_backend()
         )
 
         ret["size"] = size
@@ -78,7 +77,7 @@ def create_private_key(path, type="ec", size=4096, curve="prime256v1"):
         key = ec.generate_private_key(
             # pylint: disable=protected-access
             curve=ec._CURVE_TYPES[curve.lower()],
-            backend=default_backend(),
+            backend=_default_backend(),
         )
 
         ret["curve"] = curve
@@ -92,7 +91,7 @@ def create_private_key(path, type="ec", size=4096, curve="prime256v1"):
         encryption_algorithm=serialization.NoEncryption(),
     )
 
-    with fpopen(path, "wb", mode=0o600) as f:
+    with _fpopen(path, "wb", mode=0o600) as f:
         f.write(out)
 
     return ret
@@ -139,18 +138,18 @@ def create_csr(path=None, text=False, domains=None, key=None, algorithm="sha384"
         ]
     )
 
-    with fopen(key, "rb") as f:
-        key = serialization.load_pem_private_key(f.read(), None, default_backend())
+    with _fopen(key, "rb") as f:
+        key = serialization.load_pem_private_key(f.read(), None, _default_backend())
 
     csr = x509.CertificateSigningRequestBuilder(subject, extensions).sign(
-        key, _HASHES[algorithm](), default_backend()
+        key, _HASHES[algorithm](), _default_backend()
     )
 
     ret = _read_csr(csr)
     out = csr.public_bytes(serialization.Encoding.PEM)
 
     if path:
-        with fopen(path, "wb") as f:
+        with _fopen(path, "wb") as f:
             f.write(out)
 
         ret["path"] = path
@@ -181,7 +180,7 @@ def create_certificate(path, csr, chain=True, timeout=120, **kwargs):
         Maximum time to wait on a response from the ``acme.sign`` runner.
     """
 
-    with fopen(csr, "r") as f:
+    with _fopen(csr, "r") as f:
         csr = f.read()
 
     resp = __salt__["publish.runner"]("acme.sign", arg={"csr": csr}, timeout=timeout)
@@ -204,10 +203,10 @@ def create_certificate(path, csr, chain=True, timeout=120, **kwargs):
             f"Runner 'acme.sign' did not return a valid PEM-encoded certificate: {e}"
         )
 
-    with open(path, 'w') as f:
-        f.write(resp['text'])
+    with open(path, "w") as f:
+        f.write(resp["text"])
 
-    ret['path'] = path
+    ret["path"] = path
 
     return ret
 
@@ -221,10 +220,10 @@ def read_csr(csr):
     """
 
     if os.path.isfile(csr):
-        with fopen(csr, "rb") as f:
-            csr = x509.load_pem_x509_csr(f.read(), default_backend())
+        with _fopen(csr, "rb") as f:
+            csr = x509.load_pem_x509_csr(f.read(), _default_backend())
     else:
-        csr = x509.load_pem_x509_csr(csr.encode(), default_backend())
+        csr = x509.load_pem_x509_csr(csr.encode(), _default_backend())
 
     return _read_csr(csr)
 
@@ -245,10 +244,10 @@ def read_certificate(path):
     """
 
     if os.path.exists(path):
-        with fopen(path, "rb") as f:
-            crt = x509.load_pem_x509_certificate(f.read(), default_backend())
+        with _fopen(path, "rb") as f:
+            crt = x509.load_pem_x509_certificate(f.read(), _default_backend())
     else:
-        crt = x509.load_pem_x509_certificate(path.encode(), default_backend())
+        crt = x509.load_pem_x509_certificate(path.encode(), _default_backend())
 
     ret = {
         "algorithm": crt.signature_hash_algorithm.name,
@@ -274,8 +273,8 @@ def renewal_needed(path, days_remaining=28):
         renewed. Defaults to 28 days.
     """
 
-    with fopen(path, "rb") as f:
-        crt = x509.load_pem_x509_certificate(f.read(), default_backend())
+    with _fopen(path, "rb") as f:
+        crt = x509.load_pem_x509_certificate(f.read(), __default_backend())
 
     remaining_days = (crt.not_valid_after - datetime.datetime.now()).days
 
