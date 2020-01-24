@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import os
+import pprint
 
 try:
-    from salt.utils.files import fopen
+    from salt.utils.files import fopen as _fopen
 except ImportError:
-    from salt.utils import fopen
+    from salt.utils import fopen as _fopen
 
 try:
-    import acme  # pylint: disable=import-self
-    import josepy
+    from acme.client import ClientNetwork, ClientV2
+    from acme import errors, messages, challenges
+    import josepy as jose
 
     _HAS_ACME = True
 except ImportError:
@@ -18,7 +21,7 @@ except ImportError:
 try:
     from cryptography import x509
 
-    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.backends import default_backend as _default_backend
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import rsa, ec
 
@@ -39,7 +42,11 @@ def __virtual__():
 
 def sign(csr):
     """
+    Requests to create a certificate for the given certificate signing request
+    using ACME.
 
+    csr:
+        Certificate signing request as PEM-encoded string.
     """
 
     if "pki_dir" in __opts__:
@@ -52,9 +59,9 @@ def sign(csr):
 
     keyfile = os.path.join(basedir, "account.key")
     if not os.path.exists(keyfile):
-        key = ec.generate_private_key(curve=ec.SECP256R1, backend=default_backend())
+        key = rsa.generate_private_key(65537, 4096, _default_backend())
 
-        with fopen(keyfile, "wb") as f:
+        with _fopen(keyfile, "wb") as f:
             f.write(
                 key.private_bytes(
                     encoding=serialization.Encoding.PEM,
@@ -63,15 +70,47 @@ def sign(csr):
                 )
             )
 
-    with fopen(keyfile, "rb") as f:
-        key = josepy.JWK.load(f.read())
+    with _fopen(keyfile, "rb") as f:
+        key = jose.JWK.load(f.read())
 
-    net = acme.client.ClientNetwork(key, verify_ssl=False)
+    net = ClientNetwork(key, verify_ssl=os.getenv("ACME_CAFILE") or True)
+    directory = messages.Directory.from_json(
+        net.get("https://localhost:14000/dir").json()
+    )
+    client = ClientV2(directory, net)
 
-    client = acme.client.ClientV2("https://0.0.0.0:14000/dir", key, verify_ssl=False)
+    try:
+        client.new_account(
+            messages.NewRegistration(
+                key=key,
+                contact=("mailto:certmaster@example.org",),
+                terms_of_service_agreed=True,
+            )
+        )
+    except errors.ConflictError:
+        pass
 
-    client
+    orderr = client.new_order(csr)
 
-    csr = x509.load_pem_x509_csr(csr.encode(), default_backend())
+    for authzr in orderr.authorizations:
+        domain = authzr.body.identifier.value
 
-    return {"text": csr}
+        for challb in authzr.body.challenges:
+            if not isinstance(challb.chall, challenges.DNS01):
+                continue
+
+            pprint.pprint(f'{domain}: {challb.typ} {challb}')
+
+            response, validation = challb.response_and_validation(key)
+
+            pprint.pprint(validation)
+
+            client.answer_challenge(challb, response)
+
+    orderr = client.poll_and_finalize(
+        orderr, deadline=datetime.datetime.now() + datetime.timedelta(seconds=0)
+    )
+
+    crt = orderr.fullchain_pem
+
+    return {"text": crt}
