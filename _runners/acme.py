@@ -5,9 +5,9 @@ import os
 import pprint
 
 try:
-    from salt.utils.files import fopen as _fopen
+    from salt.utils.files import fopen as _fopen, fpopen as _fpopen
 except ImportError:
-    from salt.utils import fopen as _fopen
+    from salt.utils import fopen as _fopen, fpopen as _fpopen
 
 try:
     from acme.client import ClientNetwork, ClientV2
@@ -61,7 +61,7 @@ def sign(csr):
     if not os.path.exists(keyfile):
         key = rsa.generate_private_key(65537, 4096, _default_backend())
 
-        with _fopen(keyfile, "wb") as f:
+        with _fpopen(keyfile, "wb", mode=0o600) as f:
             f.write(
                 key.private_bytes(
                     encoding=serialization.Encoding.PEM,
