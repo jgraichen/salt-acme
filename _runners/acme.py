@@ -108,7 +108,7 @@ def sign(csr):
             client.answer_challenge(challb, response)
 
     orderr = client.poll_and_finalize(
-        orderr, deadline=datetime.datetime.now() + datetime.timedelta(seconds=0)
+        orderr, deadline=datetime.datetime.now() + datetime.timedelta(seconds=60)
     )
 
     crt = orderr.fullchain_pem

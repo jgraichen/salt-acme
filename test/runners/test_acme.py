@@ -41,7 +41,7 @@ def test_sign(runners):
     san = crt.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
 
     assert cn == "example.org"
-    assert san == [
+    assert list(san) == [
         x509.DNSName("example.org"),
         x509.DNSName("example.com"),
         x509.DNSName("www.example.org"),

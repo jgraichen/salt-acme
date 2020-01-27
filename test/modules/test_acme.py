@@ -17,37 +17,31 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from salt.exceptions import SaltInvocationError
 
 
+_EXAMPLE_PUBKEY_DETAILS = {
+    "curve": "secp256r1",
+    "text": (
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEKwDRQj9TeTj9xxukggspQ5fm7bDQ\n"
+        "7xb8jk2LpP435SowinL1rvUne2UgPwKjjTA8mPLRo+LMkVr5kfM7vY5tlg==\n"
+        "-----END PUBLIC KEY-----\n"
+    ),
+    "type": "ec",
+}
+
+
 _EXAMPLE_CRT_DETAILS = {
     "algorithm": "sha384",
     "domains": ["example.org", "example.com", "www.example.org", "www.example.com"],
-    "not_valid_after": "2020-01-22 15:27:19",
-    "not_valid_before": "2020-01-21 15:27:19",
-    "public_key": {
-        "curve": "secp192r1",
-        "text": (
-            "-----BEGIN PUBLIC KEY-----\n"
-            "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEzHytpRZH/0nCuMoT8K8Nijw2tcpi\n"
-            "otufkOQPX+k4azNhQL/WwqZWW83A16dlhCSz\n"
-            "-----END PUBLIC KEY-----\n"
-        ),
-        "type": "ec",
-    },
-    "serial": 30085325876401617040119254925065796666265568656,
+    "not_valid_after": "2020-01-28 09:00:04",
+    "not_valid_before": "2020-01-27 09:00:04",
+    "public_key": _EXAMPLE_PUBKEY_DETAILS,
+    "serial": 180395858746428869291478470917944844439732580634,
 }
 
 _EXAMPLE_CSR_DETAILS = {
     "algorithm": "sha384",
     "domains": ["example.org", "example.com", "www.example.org", "www.example.com"],
-    "public_key": {
-        "curve": "secp192r1",
-        "text": (
-            "-----BEGIN PUBLIC KEY-----\n"
-            "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEzHytpRZH/0nCuMoT8K8Nijw2tcpi\n"
-            "otufkOQPX+k4azNhQL/WwqZWW83A16dlhCSz\n"
-            "-----END PUBLIC KEY-----\n"
-        ),
-        "type": "ec",
-    },
+    "public_key": _EXAMPLE_PUBKEY_DETAILS,
 }
 
 
@@ -141,16 +135,7 @@ def test_create_csr(mods, tmpdir):
         "algorithm": "sha384",
         "domains": ["example.org", "example.com"],
         "path": path,
-        "public_key": {
-            "curve": "secp192r1",
-            "text": (
-                "-----BEGIN PUBLIC KEY-----\n"
-                "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEzHytpRZH/0nCuMoT8K8Nijw2tcpi\n"
-                "otufkOQPX+k4azNhQL/WwqZWW83A16dlhCSz\n"
-                "-----END PUBLIC KEY-----\n"
-            ),
-            "type": "ec",
-        },
+        "public_key": _EXAMPLE_PUBKEY_DETAILS,
     }
 
     assert os.path.exists(path)
