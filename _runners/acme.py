@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import fnmatch
+import hashlib
+import logging
 import os
-import pprint
+
+from salt.exceptions import SaltConfigurationError
 
 try:
+    from salt.utils.data import traverse_dict_and_list as _traverse
     from salt.utils.files import fopen as _fopen, fpopen as _fpopen
 except ImportError:
+    from salt.utils import traverse_dict_and_list as _traverse
     from salt.utils import fopen as _fopen, fpopen as _fpopen
 
 try:
@@ -23,21 +29,29 @@ try:
 
     from cryptography.hazmat.backends import default_backend as _default_backend
     from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec
+    from cryptography.hazmat.primitives.asymmetric import rsa
 
     _HAS_CRYPTOGRAPHY = True
 except ImportError:
     _HAS_CRYPTOGRAPHY = False
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def __virtual__():
     if not _HAS_ACME:
         return False, "acme not available"
-
     if not _HAS_CRYPTOGRAPHY:
         return False, "cryptography not available"
-
     return True
+
+
+_DEFAULT = {
+    "url": "https://acme-v02.api.letsencrypt.org/directory",
+    "cafile": True,
+    "contact": None,
+}
 
 
 def sign(csr):
@@ -49,15 +63,18 @@ def sign(csr):
         Certificate signing request as PEM-encoded string.
     """
 
-    if "pki_dir" in __opts__:
-        basedir = os.path.join(os.path.dirname(__opts__["pki_dir"]), "acme")
-    else:
-        basedir = os.path.join("/var/lib/salt/pki/acme")
+    # Get ACME configuration from master config
+    acme = __opts__.get("acme", {}).get("default", _DEFAULT)
+
+    basedir = os.path.join(
+        __opts__["cachedir"], "acme", hashlib.sha256(acme["url"].encode()).hexdigest()
+    )
+    keyfile = os.path.join(basedir, "account.key")
+    regfile = os.path.join(basedir, "registration.json")
 
     if not os.path.isdir(basedir):
-        os.mkdir(basedir, 0o700)
+        os.makedirs(basedir, 0o755)
 
-    keyfile = os.path.join(basedir, "account.key")
     if not os.path.exists(keyfile):
         key = rsa.generate_private_key(65537, 4096, _default_backend())
 
@@ -73,44 +90,125 @@ def sign(csr):
     with _fopen(keyfile, "rb") as f:
         key = jose.JWK.load(f.read())
 
-    net = ClientNetwork(key, verify_ssl=os.getenv("ACME_CAFILE") or True)
-    directory = messages.Directory.from_json(
-        net.get("https://localhost:14000/dir").json()
-    )
+    net = ClientNetwork(key, verify_ssl=acme["cafile"])
+    directory = messages.Directory.from_json(net.get(acme["url"]).json())
     client = ClientV2(directory, net)
 
-    try:
-        client.new_account(
-            messages.NewRegistration(
-                key=key,
-                contact=("mailto:certmaster@example.org",),
-                terms_of_service_agreed=True,
+    if not os.path.exists(regfile):
+        try:
+            if isinstance(acme["contact"], str):
+                contact = (acme["contact"],)
+            elif isinstance(acme["contact"], list):
+                contact = tuple(acme["contact"])
+            else:
+                contact = None
+
+            registration = client.new_account(
+                messages.NewRegistration(
+                    key=key, contact=contact, terms_of_service_agreed=True
+                )
             )
-        )
-    except errors.ConflictError:
-        pass
+        except errors.ConflictError:
+            registration = client.new_account(
+                messages.NewRegistration(key=key, only_return_existing=True)
+            )
+        with _fopen(regfile, "w") as f:
+            f.write(registration.json_dumps_pretty())
 
     orderr = client.new_order(csr)
+    solver = _ChallengeSolver()
 
     for authzr in orderr.authorizations:
-        domain = authzr.body.identifier.value
+        if authzr.body.status != messages.STATUS_VALID:
+            for challb in authzr.body.challenges:
+                if isinstance(challb.chall, challenges.DNS01):
+                    solver.add(
+                        challb,
+                        challb.validation_domain_name(authzr.body.identifier.value),
+                        challb.validation(key),
+                    )
 
-        for challb in authzr.body.challenges:
-            if not isinstance(challb.chall, challenges.DNS01):
+    solver.install()
+
+    try:
+        for challb in solver.challenges:
+            client.answer_challenge(challb, challb.response(key))
+
+        orderr = client.poll_and_finalize(
+            orderr, deadline=datetime.datetime.now() + datetime.timedelta(seconds=60)
+        )
+
+        crt = orderr.fullchain_pem
+
+        return {"text": crt}
+    finally:
+        solver.remove()
+
+
+class _ChallengeSolver:
+    def __init__(self):
+        self.challenges = []
+        self.providers = {}
+        self.pattern = {}
+
+        for name, conf in _traverse(__opts__, "acme:provider", {}).items():
+            if not "pattern" in conf:
                 continue
 
-            pprint.pprint(f'{domain}: {challb.typ} {challb}')
+            if isinstance(conf["pattern"], str):
+                self.pattern[name] = [p.strip() for p in conf["pattern"].split(",")]
+            elif isinstance(conf["pattern"], list):
+                self.pattern[name] = conf["pattern"]
+            else:
+                raise SaltConfigurationError(
+                    "acme:provider:{name}:pattern must be string or list"
+                )
 
-            response, validation = challb.response_and_validation(key)
+    def add(self, challb, domain, txt):
+        for name, pts in self.pattern.items():
+            for pat in pts:
+                if fnmatch.fnmatch(domain, pat):
+                    self.challenges.append(challb)
+                    self._get_provider(name).add(domain, txt)
+                    return
 
-            pprint.pprint(validation)
+        raise SaltConfigurationError(f"No ACME provider matches {domain}")
 
-            client.answer_challenge(challb, response)
+    def install(self):
+        for provider in self.providers.values():
+            provider.install()
 
-    orderr = client.poll_and_finalize(
-        orderr, deadline=datetime.datetime.now() + datetime.timedelta(seconds=60)
-    )
+    def remove(self):
+        for provider in self.providers.values():
+            provider.remove()
 
-    crt = orderr.fullchain_pem
+    def _get_provider(self, name):
+        if name not in self.providers:
+            try:
+                self.providers[name] = _Provider(
+                    name, **__opts__["acme"]["provider"][name]
+                )
+            except KeyError:
+                raise SaltConfigurationError(f"ACME provider does not exist: {name}")
+        return self.providers[name]
 
-    return {"text": crt}
+
+class _Provider:
+    def __init__(self, name, pattern, runner, **kwargs):
+        self.name = name
+        self.pattern = pattern
+        self.runner = runner
+        self.kwargs = kwargs
+        self.challenges = {}
+
+    def __len__(self):
+        return len(self.challenges)
+
+    def add(self, domain, txt):
+        self.challenges[domain] = txt
+
+    def install(self):
+        __salt__[f"{self.runner}.install"](self.challenges, **self.kwargs)
+
+    def remove(self):
+        __salt__[f"{self.runner}.remove"](self.challenges, **self.kwargs)

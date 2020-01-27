@@ -1,0 +1,11 @@
+$ORIGIN example.org.
+$TTL 0
+
+@       IN  SOA   ns1.example.org. certmaster.example.org. (
+            100   ; serial
+            300   ; refresh time
+            100   ; retry time
+            6000  ; expire time
+            600   ; negative caching time
+        )
+@       IN  NS    ns1.example.org.

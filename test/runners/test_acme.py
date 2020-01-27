@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 
-import json
-import requests
-
 import pytest
 
 from cryptography import x509
@@ -14,20 +11,6 @@ from cryptography.hazmat.backends import default_backend
 def _read(path, mode="r"):
     with open(path, mode) as f:
         return f.read()
-
-
-def _set_txt(host, challenge):
-    requests.post(
-        "http://localhost:8055/set-txt",
-        data=json.dumps({"host": f"_acme-challenge.{host}.", "value": challenge}),
-    )
-
-
-def _clear_txt(host):
-    requests.post(
-        "http://localhost:8055/clear-txt",
-        data=json.dumps({"host": f"_acme-challenge.{host}."}),
-    )
 
 
 def test_sign(runners):

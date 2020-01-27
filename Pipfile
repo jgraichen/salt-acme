@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 salt = "*"
 acme = "*"
+dnspython = "*"
 cryptography = "*"
 
 [dev-packages]
