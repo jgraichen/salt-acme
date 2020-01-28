@@ -55,13 +55,3 @@ py37-salt2018-crypt-acme:
   extends: .base
   variables:
     IMAGE: python:3.7
-
-ubuntu1804-py36-salt2017-crypt21-acme022:
-  extends: .base
-  variables:
-    IMAGE: python:3.6
-
-debian10-py37-salt2018-crypt26-acme031:
-  extends: .base
-  variables:
-    IMAGE: python:3.7
