@@ -52,14 +52,14 @@ def _read(path, mode="r"):
 
 def test_create_private_key(mods, tmpdir):
     """
-    Creates an elliptic curve private key using prime256v1 curve by default.
+    Creates an elliptic curve private key using secp256r1 curve by default.
     File is written with ``600`` mode.
     """
 
     keyfile = os.path.join(tmpdir, "example.key")
 
     assert mods["acme.create_private_key"](keyfile) == {
-        "curve": "prime256v1",
+        "curve": "secp256r1",
         "path": keyfile,
         "type": "ec",
     }

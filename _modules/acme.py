@@ -38,7 +38,7 @@ def __virtual__():
     return True
 
 
-def create_private_key(path, type="ec", size=4096, curve="prime256v1"):
+def create_private_key(path, type="ec", size=4096, curve="secp256r1"):
     """
     Creates an elliptic curve private key in PEM format.
 
@@ -50,7 +50,7 @@ def create_private_key(path, type="ec", size=4096, curve="prime256v1"):
         Key type to generate, either ``ec`` (default) or ``rsa``.
 
     curve:
-        Curve to use for an EC key. Defaults to ``prime256v1``.
+        Curve to use for an EC key. Defaults to ``secp256r1``.
 
     size:
         Key length of an RSA key in bits. Defaults to ``4096``.
