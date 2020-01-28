@@ -1,7 +1,7 @@
 id: test_master
 acme:
   default:
-    url: https://localhost:14000/dir
+    url: https://127.0.0.1:14000/dir
     cafile: test/fixtures/pebble.minica.pem
     contact: mailto:certmaster@example.org
 
@@ -9,7 +9,8 @@ acme:
     example.com:
       pattern: example.com, *.example.com
       runner: acme_nsupdate
-      server: 10.30.50.3
+      server: 127.0.0.1
+      port: 8053
       zone: example.com
 
     example.org:
@@ -17,7 +18,7 @@ acme:
         - example.org
         - '*.example.org'
       runner: acme_nsupdate
-      server: 10.30.50.3
+      server: 127.0.0.1
       port: 8053
       zone: example.org.
       tsig: hmac-sha256:salt:5MDvsVH5W7Vuvm9T3JvDCGnZACV4npdUw44TbdKcHqE=

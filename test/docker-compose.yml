@@ -3,25 +3,14 @@ version: "3"
 services:
   pebble:
     image: letsencrypt/pebble:latest
-    command: pebble -config /test/config/pebble-config.json -strict=false -dnsserver 10.30.50.3:53
+    command: pebble -config /test/config/pebble-config.json -strict=false -dnsserver knot:53
     environment:
       PEBBLE_VA_NOSLEEP: 1
     ports:
       - 14000:14000 # HTTPS ACME API
       - 15000:15000 # HTTPS Management API
-    networks:
-      acmenet:
-        ipv4_address: 10.30.50.2
   knot:
     build: ./fixtures/knot
-    networks:
-      acmenet:
-        ipv4_address: 10.30.50.3
-
-networks:
-  acmenet:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.30.50.0/24
+    ports:
+      - 8053:8053/udp
+      - 8053:8053/tcp

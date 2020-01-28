@@ -21,13 +21,14 @@ TSIG_KEY = "hmac-sha256:salt:5MDvsVH5W7Vuvm9T3JvDCGnZACV4npdUw44TbdKcHqE="
 @pytest.fixture
 def resolver():
     resolver = dns.resolver.Resolver()
-    resolver.nameservers = ["10.30.50.3"]
+    resolver.nameservers = ["127.0.0.1"]
+    resolver.port = 8053
     return resolver
 
 
 def test_install_and_remove(runners, resolver):
     runners["acme_nsupdate.install"](
-        CHALLENGES_COM, server="10.30.50.3", zone="example.com."
+        CHALLENGES_COM, server="127.0.0.1", port=8053, zone="example.com."
     )
 
     answer = resolver.query("_acme-challenge.example.com.", "TXT")
@@ -37,7 +38,7 @@ def test_install_and_remove(runners, resolver):
     assert str(answer.rrset[0]) == '"token-2"'
 
     runners["acme_nsupdate.remove"](
-        CHALLENGES_COM, server="10.30.50.3", zone="example.com."
+        CHALLENGES_COM, server="127.0.0.1", port=8053, zone="example.com."
     )
 
     with pytest.raises(dns.resolver.NXDOMAIN):
@@ -49,7 +50,7 @@ def test_install_and_remove(runners, resolver):
 
 def test_install_and_remove_tsig(runners, resolver):
     runners["acme_nsupdate.install"](
-        CHALLENGES_ORG, server="10.30.50.3", zone="example.org.", tsig=TSIG_KEY
+        CHALLENGES_ORG, server="127.0.0.1", port=8053, zone="example.org.", tsig=TSIG_KEY
     )
 
     answer = resolver.query("_acme-challenge.example.org.", "TXT")
@@ -59,7 +60,7 @@ def test_install_and_remove_tsig(runners, resolver):
     assert str(answer.rrset[0]) == '"token-4"'
 
     runners["acme_nsupdate.remove"](
-        CHALLENGES_ORG, server="10.30.50.3", zone="example.org.", tsig=TSIG_KEY
+        CHALLENGES_ORG, server="127.0.0.1", port=8053, zone="example.org.", tsig=TSIG_KEY
     )
 
     with pytest.raises(dns.resolver.NXDOMAIN):
