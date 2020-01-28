@@ -1,0 +1,28 @@
+name: pytest
+on: push
+
+jobs:
+  pytest:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env:
+          - py37-salt2019-crypt-acme
+          - py37-salt2018-crypt-acme
+        include:
+          - python: 3.7
+            name: Python 3.7 / Salt 2019
+            env: py37-salt2019-crypt-acme
+          - python: 3.7
+            name: Python 3.7 / Salt 2018
+            env: py37-salt2018-crypt-acme
+
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - run: docker-compose --file test/docker-compose.yml up --detach
+      - run: python -m pip install --upgrade pip tox
+      - run: tox -e ${{ matrix.env }}
