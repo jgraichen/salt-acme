@@ -3,10 +3,11 @@
 import datetime
 import fnmatch
 import hashlib
+import json
 import logging
 import os
 
-from salt.exceptions import SaltConfigurationError
+from salt.exceptions import SaltConfigurationError, SaltInvocationError
 
 try:
     from salt.utils.data import traverse_dict_and_list as _traverse
@@ -90,11 +91,14 @@ def sign(csr):
     with _fopen(keyfile, "rb") as f:
         key = jose.JWK.load(f.read())
 
-    net = ClientNetwork(key, verify_ssl=acme["cafile"])
+    net = ClientNetwork(key, verify_ssl=acme.get("cafile", True))
     directory = messages.Directory.from_json(net.get(acme["url"]).json())
     client = ClientV2(directory, net)
 
-    if not os.path.exists(regfile):
+    if os.path.exists(regfile):
+        with _fopen(regfile, "r") as f:
+            net.account = messages.RegistrationResource.from_json(json.load(f))
+    else:
         try:
             if isinstance(acme["contact"], str):
                 contact = (acme["contact"],)
