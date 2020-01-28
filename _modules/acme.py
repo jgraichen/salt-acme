@@ -211,6 +211,31 @@ def create_certificate(path, csr, chain=True, timeout=120, **kwargs):
     return ret
 
 
+def read_private_key(key):
+    """
+    Read details about a private_key.
+
+    key:
+        Path to a private key file or a PEM-encoded string.
+    """
+
+    if os.path.isfile(key):
+        with _fopen(key, "rb") as f:
+            key = serialization.load_pem_private_key(f.read(), None, _default_backend())
+    else:
+        key = serialization.load_pem_private_key(key.encode(), None, _default_backend())
+
+    ret = {}
+
+    if isinstance(key, rsa.RSAPrivateKey):
+        return {"type": "rsa", "size": key.key_size}
+
+    if isinstance(key, ec.EllipticCurvePrivateKey):
+        return {"type": "ec", "curve": key.curve.name}
+
+    raise TypeError(f"Unsupported key type: {type(key)}")
+
+
 def read_csr(csr):
     """
     Read details about a certificate signing request.
