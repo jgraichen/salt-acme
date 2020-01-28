@@ -122,11 +122,10 @@ def sign(csr):
         if authzr.body.status != messages.STATUS_VALID:
             for challb in authzr.body.challenges:
                 if isinstance(challb.chall, challenges.DNS01):
-                    solver.add(
-                        challb,
-                        challb.validation_domain_name(authzr.body.identifier.value),
-                        challb.validation(key),
-                    )
+                    domain = authzr.body.identifier.value
+                    record = challb.validation_domain_name(domain) + "."
+                    token = challb.validation(key)
+                    solver.add(challb, domain, record, token)
 
     solver.install()
 
@@ -164,12 +163,12 @@ class _ChallengeSolver:
                     "acme:provider:{name}:pattern must be string or list"
                 )
 
-    def add(self, challb, domain, txt):
+    def add(self, challb, domain, record, txt):
         for name, pts in self.pattern.items():
             for pat in pts:
                 if fnmatch.fnmatch(domain, pat):
                     self.challenges.append(challb)
-                    self._get_provider(name).add(domain, txt)
+                    self._get_provider(name).add(record, txt)
                     return
 
         raise SaltConfigurationError(f"No ACME provider matches {domain}")

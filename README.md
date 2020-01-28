@@ -48,3 +48,15 @@ Uses the state modules, used by e.g. `acme/init.sls`.
     - domains: [example.org, www.example.org]
     - chain: True
 ```
+
+
+## Development
+
+Run required test environment using docker-compose:
+
+```
+$ docker-compose -f test/docker-compose.yml up -d --remove-orphans --build
+```
+
+This will start pebble, a testing ACME server, and knot, a DNS server that both
+are used in the tests.
