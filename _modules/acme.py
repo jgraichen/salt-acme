@@ -122,7 +122,7 @@ def create_csr(path=None, text=False, domains=None, key=None, algorithm="sha384"
         domains = [s.strip() for s in domains.split(",")]
 
     if not domains:
-        raise SaltInvocationError("At least one domains must be given")
+        raise SaltInvocationError("At least one domain must be given")
 
     if algorithm not in _HASHES:
         raise SaltInvocationError(f"Unsupported algorithm: {algorithm}")
@@ -308,7 +308,7 @@ def renewal_needed(path, days_remaining=28, **_kwargs):
     """
 
     with _fopen(path, "rb") as f:
-        crt = x509.load_pem_x509_certificate(f.read(), __default_backend())
+        crt = x509.load_pem_x509_certificate(f.read(), _default_backend())
 
     remaining_days = (crt.not_valid_after - datetime.datetime.now()).days
 

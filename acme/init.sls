@@ -15,7 +15,7 @@ for name in certs.keys():
 
     state(certdir).file.directory(makedirs=True)
 
-    cert = __salt__["pillar.get"](f"acme:certs:{name}", default, merge=True)
+    cert = __salt__["pillar.get"](f"acme:certificate:{name}", default, merge=True)
 
     keyargs = {"require": []}
     fileargs = {"mode": 640}
