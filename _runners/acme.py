@@ -64,6 +64,9 @@ def sign(csr):
         Certificate signing request as PEM-encoded string.
     """
 
+    if isinstance(csr, dict):
+        csr = csr['csr']
+
     # Get ACME configuration from master config
     acme = __opts__.get("acme", {}).get("default", _DEFAULT)
 
