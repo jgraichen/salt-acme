@@ -180,17 +180,26 @@ def create_certificate(path, csr, chain=True, timeout=120, **kwargs):
         Maximum time to wait on a response from the ``acme.sign`` runner.
     """
 
-    with _fopen(csr, "r") as f:
-        csr = f.read()
+    if os.path.exists(csr):
+        with _fopen(csr, "r") as f:
+            csr = f.read()
 
     resp = __salt__["publish.runner"]("acme.sign", arg={"csr": csr}, timeout=timeout)
+
+    if resp is None:
+        raise SaltInvocationError(
+            "Nothing returned from runner, do you have permissions run `acme.sign` via `peer_run`?"
+        )
 
     if isinstance(resp, str) and "timed out" in resp:
         raise SaltReqTimeoutError(resp)
 
+    if isinstance(resp, str):
+        raise CommandExecutionError(resp)
+
     if not isinstance(resp, dict):
         raise CommandExecutionError(
-            f"Expected 'acme.sign' response to be a dict, but got {type(ret)}"
+            f"Expected 'acme.sign' response to be a dict, but got {type(resp)}"
         )
 
     if chain and "chain" in resp:
