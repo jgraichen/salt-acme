@@ -128,9 +128,7 @@ def certificate(name, csr=None, backup=True, key=None, **kwargs):
     else:
         new = __salt__["acme.read_csr"](csr, key=key, **kwargs)
 
-    if existing and not __salt__["acme.renewal_needed"](
-        name, days_remaining=kwargs.get("days_remaining")
-    ):
+    if existing and not __salt__["acme.renewal_needed"](name, **kwargs):
         ret["result"] = True
         ret["comment"] = "The certificate is already in correct state"
         return ret

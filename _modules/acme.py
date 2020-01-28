@@ -160,7 +160,7 @@ def create_csr(path=None, text=False, domains=None, key=None, algorithm="sha384"
     return ret
 
 
-def create_certificate(path, csr, chain=True, timeout=120, **kwargs):
+def create_certificate(path, csr, chain=True, timeout=120, **_kwargs):
     """
     Create a certificate by asking the master to sign a certificate signing
     request (CSR) or create a CSR on-the-fly.
@@ -295,7 +295,7 @@ def read_certificate(path):
     return ret
 
 
-def renewal_needed(path, days_remaining=28):
+def renewal_needed(path, days_remaining=28, **_kwargs):
     """
     Check if a certificate expires within the specified days.
 
