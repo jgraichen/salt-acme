@@ -1,0 +1,21 @@
+acme:
+  basedir: /etc/acme
+
+  default:
+    key:
+      mode: 640
+      user: root
+      group: root
+      type: ec
+      curve: secp256r1
+      size: 4096
+
+  certificate:
+    example.org:
+      domains:
+        - example.org
+        - www.example.org
+      include:
+        - nginx.service
+      watch_in:
+        - service: nginx
