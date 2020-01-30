@@ -6,6 +6,7 @@ client.
 dehydrated needs to be installed and configured manually on the salt master.
 """
 
+import fnmatch
 import logging
 import re
 import shutil
@@ -43,6 +44,20 @@ def _get_executable_args():
     return _get(__opts__, "dehydrated:args", [])
 
 
+def _get_requested_names(csr):
+    requested_names = set()
+    obj = x509.load_pem_x509_csr(csr.encode(), _default_backend())
+    for name in obj.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME):
+        requested_names.add(name.value)
+    try:
+        alt = obj.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+        for name in alt.value:
+            requested_names.add(name.value)
+    except x509.ExtensionNotFound:
+        pass
+    return requested_names
+
+
 def sign(csr):
     """
     Requests to sign a CSR using dehydrated.
@@ -57,29 +72,17 @@ def sign(csr):
         _, head, body, tail = match.groups()
         csr = "\n".join([head, *body.strip().split(" "), tail])
 
-    requested_names = set()
-    obj = x509.load_pem_x509_csr(csr.encode(), _default_backend())
-    for name in obj.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME):
-        requested_names.add(name.value)
+    requested = _get_requested_names(csr)
 
-    try:
-        alt = obj.extensions.get_extension_for_class(x509.SubjectAlternativeName)
-        for name in alt.value:
-            requested_names.add(name.value)
-    except x509.ExtensionNotFound:
-        pass
+    for pattern, auth in __salt__["config.get"]("dehydrated:authorization", {}).items():
+        if fnmatch.fnmatch(__opts__['id'], pattern):
+            for name in requested.copy():
+                for rule in auth:
+                    if fnmatch.fnmatch(name, rule):
+                        requested.remove(name)
 
-    permitted_names = set()
-    pillar = __salt__["pillar.show_pillar"](__opts__["id"])
-    for cert in _get(pillar, "acme:certificate", {}).values():
-        domains = cert.get("domains", [])
-        if isinstance(domains, str):
-            domains = [d.strip() for d in domains.split(",")]
-        permitted_names.update(domains)
-
-    not_permitted_names = requested_names.difference(permitted_names)
-    if not_permitted_names:
-        raise AuthorizationError(f"Unauthorized names: {not_permitted_names}")
+    if requested:
+        raise AuthorizationError(f"Unauthorized names: {requested}")
 
     executable = shutil.which(_get_executable_name())
     arguments = _get_executable_args()

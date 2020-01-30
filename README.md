@@ -13,8 +13,19 @@ certificates for a given domain.
 
 Currently only `dehydrated.sign` is supported. This runner dispatches the actual
 ACME signing to the `dehydrated` script. This script must be configured and set
-up explicitly before. This runner checks if all domains in certificate signing
-requests are present in the minions pillar.
+up explicitly before.
+
+Allow signing actions can be configured in the masters configuration:
+
+```yaml
+dehydrated:
+  authorization:
+    '*.minion.id':
+      - 'example.org'
+      - '*.example.com
+```
+
+Minions and domain names are matched using shell globbing rules (`fnmatch`).
 
 ## Pillar Example
 
