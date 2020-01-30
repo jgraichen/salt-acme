@@ -3,18 +3,26 @@
 Manage TLS certificates with ACME using the salt master for certificate
 management and authentication.
 
-Minions create private keys and certificate signing requests that are send to
-the `acme.sign` runner on the master. The master authenticates the minion,
-checks allowed domains and handles the ACME account, verification and requesting
-the certificate. It uses DNS-01 challenge for verification.
+All cryptographic operations are handled by `salt-pki`. Signing requests are
+send to a runner on the salt master, e.g. `dehydrated.sign`.
+
+The runner can authenticate the minion and check if it is permitted to request
+certificates for a given domain.
+
+## Signing runners
+
+Currently only `dehydrated.sign` is supported. This runner dispatches the actual
+ACME signing to the `dehydrated` script. This script must be configured and set
+up explicitly before. This runner checks if all domains in certificate signing
+requests are present in the minions pillar.
 
 ## Pillar Example
 
-TODO: `acne/init.sls`
+Example: Creates certificate and private key in default location (e.g.
+`/etc/acme/example.org/{key.pem,certificate.pem}`).
 
-Example: Creates certificate and private key in default location (e.g. `/etc/acme`).
-
-Includes other states (`nginx.service`) and reloads services on certificate changes (`nginx`).
+Includes other states (`nginx.service`) and reloads services on certificate
+changes (`nginx`).
 
 ```yaml
 states:
@@ -29,34 +37,3 @@ acme:
       watch_in:
         - nginx
 ```
-
-# State Example
-
-Uses the state modules, used by e.g. `acme/init.sls`.
-
-```yaml
-/etc/acme/certs/example.org.key:
-  acme.private_key:
-    - curve: secp256r1
-    - user: root
-    - group: root
-    - mode: 600
-
-/etc/acme/private/example.org.pem:
-  acme.certificate:
-    - key: /etc/acme/certs/example.org.key
-    - domains: [example.org, www.example.org]
-    - chain: True
-```
-
-
-## Development
-
-Run required test environment using docker-compose:
-
-```
-$ docker-compose -f test/docker-compose.yml up -d --remove-orphans --build
-```
-
-This will start pebble, a testing ACME server, and knot, a DNS server that both
-are used in the tests.

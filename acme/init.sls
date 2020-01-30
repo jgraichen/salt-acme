@@ -11,7 +11,7 @@ certs = __salt__["pillar.get"]("acme:certificate", {})
 for name in certs.keys():
     certdir = os.path.join(basedir, name)
     keyfile = os.path.join(certdir, "key.pem")
-    crtfile = os.path.join(certdir, "fullchain.pem")
+    crtfile = os.path.join(certdir, "certificate.pem")
 
     state(certdir).file.directory(makedirs=True)
 
@@ -29,8 +29,8 @@ for name in certs.keys():
 
     keyargs["require"].append({"file": certdir})
 
-    state(keyfile).acme.private_key(**keyargs)
-    state(keyfile).file.managed(replace=False, require=[{"acme": keyfile}], **fileargs)
+    state(keyfile).pki.private_key(**keyargs)
+    state(keyfile).file.managed(replace=False, require=[{"pki": keyfile}], **fileargs)
 
     if "include" in cert:
         for i in cert.pop("include", []):
@@ -41,8 +41,8 @@ for name in certs.keys():
     if "require" not in cert:
         cert["require"] = []
 
-    cert["require"].append({"acme": keyfile})
+    cert["require"].append({"pki": keyfile})
     cert["require"].append({"file": keyfile})
     cert["require"].append({"file": certdir})
 
-    state(crtfile).acme.certificate(**cert)
+    state(crtfile).pki.certificate(**cert)

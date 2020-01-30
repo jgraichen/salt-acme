@@ -2,6 +2,8 @@ acme:
   basedir: /etc/acme
 
   default:
+    # All options can be overridden in the certificate below
+    runner: dehydrated.sign
     key:
       mode: 640
       user: root
