@@ -1,0 +1,7 @@
+'*':
+  - 'example.org'
+  - '*.example.org'
+
+'master':
+  - 'example.com'
+  - '*.example.com'

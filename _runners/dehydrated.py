@@ -8,19 +8,27 @@ dehydrated needs to be installed and configured manually on the salt master.
 
 import fnmatch
 import logging
+import os
 import re
 import shutil
 import subprocess
 import tempfile
+import yaml
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend as _default_backend
 
-from salt.exceptions import CommandExecutionError, AuthorizationError
+from salt.exceptions import (
+    AuthorizationError,
+    CommandExecutionError,
+    SaltConfigurationError,
+)
 
 try:
     from salt.utils.data import traverse_dict_and_list as _get
+    from salt.utils.files import fopen as _fopen
 except ImportError:
+    from salt.utils import fopen as _fopen
     from salt.utils import traverse_dict_and_list as _get
 
 
@@ -30,9 +38,9 @@ _REGEXP_CSR = re.compile(
 
 
 def __virtual__():
-    exename = _get_executable_name()
-    if not shutil.which(exename):
-        return False, f"dehydrated executable not found: {exename}"
+    name = _get_executable_name()
+    if not _find_executable(name):
+        return False, f"dehydrated executable not found: {name}"
     return True
 
 
@@ -40,8 +48,13 @@ def _get_executable_name():
     return _get(__opts__, "dehydrated:executable", "dehydrated")
 
 
-def _get_executable_args():
-    return _get(__opts__, "dehydrated:args", [])
+def _find_executable(name):
+    path = shutil.which(name)
+    if path:
+        return path
+    if os.path.exists(name):
+        return os.path.abspath(name)
+    return None
 
 
 def _get_requested_names(csr):
@@ -55,7 +68,33 @@ def _get_requested_names(csr):
             requested_names.add(name.value)
     except x509.ExtensionNotFound:
         pass
-    return requested_names
+    return sorted(requested_names)
+
+
+def _exec_dehydrated(csr):
+    name = _get_executable_name()
+    path = _find_executable(name)
+    if not path:
+        raise SaltConfigurationError(f"Dehydrated executable not found: {name}")
+
+    args = _get(__opts__, "dehydrated:args", [])
+    cmd = [path, *args, "--signcsr", csr]
+
+    logging.debug("Execute: %s", cmd)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    try:
+        out, err = process.communicate(timeout=300)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        out, err = process.communicate()
+
+    if process.returncode > 0:
+        raise CommandExecutionError(
+            f"dehydrated failed with exit code {process.returncode}\n{err.decode()}"
+        )
+
+    return out
 
 
 def sign(csr):
@@ -73,44 +112,33 @@ def sign(csr):
         csr = "\n".join([head, *body.strip().split(" "), tail])
 
     requested = _get_requested_names(csr)
+    auth_file = _get(__opts__, "dehydrated:auth_file", None)
+    if auth_file:
+        with _fopen(auth_file, "r") as f:
+            auth = yaml.safe_load(f)
 
-    for pattern, auth in __salt__["config.get"]("dehydrated:authorization", {}).items():
-        if fnmatch.fnmatch(__opts__['id'], pattern):
-            for name in requested.copy():
-                for rule in auth:
-                    if fnmatch.fnmatch(name, rule):
-                        requested.remove(name)
+        if not isinstance(auth, dict):
+            raise SaltConfigurationError("Dehydrated auth_file must be a dict")
 
-    if requested:
-        raise AuthorizationError(f"Unauthorized names: {requested}")
+        for pattern, auth in auth.items():
+            if fnmatch.fnmatch(__opts__["id"], pattern):
+                for name in requested.copy():
+                    for rule in auth:
+                        if fnmatch.fnmatch(name, rule):
+                            requested.remove(name)
 
-    executable = shutil.which(_get_executable_name())
-    arguments = _get_executable_args()
+        if requested:
+            raise AuthorizationError(f"Unauthorized names: {', '.join(requested)}")
 
     with tempfile.NamedTemporaryFile("w+") as f:
         f.write(csr)
         f.flush()
 
-        cmd = [executable, "--signcsr", f.name, *arguments]
-
-        logging.debug("Execute: %s", cmd)
-
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        try:
-            out, err = process.communicate(timeout=300)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            out, err = process.communicate()
-
-    if process.returncode > 0:
-        raise CommandExecutionError(
-            f"dehydrated failed with exit code {process.returncode}\n{err.decode()}"
-        )
+        out = _exec_dehydrated(f.name)
 
     result = []
     for line in out.decode().split("\n"):
         if len(line) and line[0] != "#" and line[0] != " ":
             result.append(line)
 
-    return {"text": "\n".join(result)}
+    return {"text": "\n".join(result) + "\n"}

@@ -15,17 +15,19 @@ Currently only `dehydrated.sign` is supported. This runner dispatches the actual
 ACME signing to the `dehydrated` script. This script must be configured and set
 up explicitly before.
 
-Allow signing actions can be configured in the masters configuration:
+Signing requests can be limited by providing an `auth_file` in the masters
+configuration. It restricts minions to specific domain names in the subject and
+SANs:
 
 ```yaml
-dehydrated:
-  authorization:
-    '*.minion.id':
-      - 'example.org'
-      - '*.example.com
+'*.minion.id':
+  - 'example.org'
+  - '*.example.com'
 ```
 
-Minions and domain names are matched using shell globbing rules (`fnmatch`).
+Minions and domain names are matched using shell glob-style (`fnmatch`).
+
+See `master.example.yaml` for more master configuration options.
 
 ## Pillar Example
 

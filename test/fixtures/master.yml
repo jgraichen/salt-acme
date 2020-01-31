@@ -1,0 +1,5 @@
+id: master
+
+dehydrated:
+  executable: test/fixtures/dehydrated
+  auth_file: test/fixtures/auth.yml

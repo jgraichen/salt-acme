@@ -1,0 +1,17 @@
+dehydrated:
+  # The executable will be searched in PATH or can be a fully qualified path
+  executable: dehydrated
+
+  # List of extra arguments to pass to dehydrated
+  args: []
+
+  # An auth file limiting minions to specific domain names. Names are extracted
+  # from subject common name and SAN.
+  #
+  # The file must a yaml file in the following format:
+  #   '*minion_pattern':
+  #     - example.org
+  #     - *.example.org
+  #
+  # Minions and domain names will be matched using glob-style patterns.
+  auth_file: None
