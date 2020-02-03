@@ -32,7 +32,7 @@ See `master.example.yaml` for more master configuration options.
 ## Pillar Example
 
 Example: Creates certificate and private key in default location (e.g.
-`/etc/acme/example.org/{key.pem,certificate.pem}`).
+`/etc/acme/example.org/{privkey.pem,fullchain.pem}`).
 
 Includes other states (`nginx.service`) and reloads services on certificate
 changes (`nginx`).

@@ -10,8 +10,8 @@ certs = __salt__["pillar.get"]("acme:certificate", {})
 
 for name in certs.keys():
     certdir = os.path.join(basedir, name)
-    keyfile = os.path.join(certdir, "key.pem")
-    crtfile = os.path.join(certdir, "certificate.pem")
+    keyfile = os.path.join(certdir, "privkey.pem")
+    crtfile = os.path.join(certdir, "fullchain.pem")
 
     state(certdir).file.directory(makedirs=True)
 
