@@ -25,7 +25,7 @@ for name in certs.keys():
 
     for k in ('mode', 'user', 'group'):
         if k in keyargs:
-            fileargs[k] = keyargs.pop()
+            fileargs[k] = keyargs.pop(k)
 
     keyargs["require"].append({"file": certdir})
 
