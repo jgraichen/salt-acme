@@ -18,6 +18,8 @@ import yaml
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend as _default_backend
 
+from filelock import FileLock
+
 from salt.exceptions import (
     AuthorizationError,
     CommandExecutionError,
@@ -31,6 +33,8 @@ except ImportError:
     from salt.utils import fopen as _fopen
     from salt.utils import traverse_dict_and_list as _get
 
+
+LOGGER = logging.getLogger(__name__)
 
 _REGEXP_CSR = re.compile(
     r"\s*((-+BEGIN CERTIFICATE REQUEST-+)\s*([A-Za-z0-9+/=\s]*)\s*(-+END CERTIFICATE REQUEST-+))\s*"
@@ -80,14 +84,20 @@ def _exec_dehydrated(csr):
     args = _get(__opts__, "dehydrated:args", [])
     cmd = [path, *args, "--signcsr", csr]
 
-    logging.debug("Execute: %s", cmd)
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    lock = FileLock(os.path.join(__opts__['cache_dir'], '.dehydrated.lock'))
     try:
-        out, err = process.communicate(timeout=300)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        out, err = process.communicate()
+        lock.acquire(timeout=300)
+
+        LOGGER.debug("Execute: %s", cmd)
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        try:
+            out, err = process.communicate(timeout=300)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            out, err = process.communicate()
+    finally:
+        lock.release()
 
     if process.returncode > 0:
         raise CommandExecutionError(
