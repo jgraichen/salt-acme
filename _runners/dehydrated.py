@@ -84,7 +84,7 @@ def _exec_dehydrated(csr):
     args = _get(__opts__, "dehydrated:args", [])
     cmd = [path, *args, "--signcsr", csr]
 
-    lock = FileLock(os.path.join(__opts__['cache_dir'], '.dehydrated.lock'))
+    lock = FileLock(os.path.join(__opts__['cachedir'], '.dehydrated.lock'))
     try:
         lock.acquire(timeout=300)
 

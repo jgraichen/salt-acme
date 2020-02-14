@@ -23,6 +23,6 @@ def load_module(name, file):
 @pytest.fixture()
 def master_opts(tmpdir):
     opts = salt.config.master_config('test/fixtures/master.yml')
-    opts['cache_dir'] = tmpdir
+    opts['cachedir'] = tmpdir
     opts['dehydrated']['executable'] = os.path.join(ROOT, 'test/fixtures/dehydrated.sh')
     return opts
