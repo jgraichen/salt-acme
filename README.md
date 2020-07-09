@@ -50,9 +50,3 @@ acme:
       watch_in:
         - nginx
 ```
-
-## Dependencies
-
-The dehydrated runner requires the following additional python packages:
-
-* `python3-filelock`

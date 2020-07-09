@@ -18,8 +18,6 @@ import yaml
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend as _default_backend
 
-from filelock import FileLock
-
 from salt.exceptions import (
     AuthorizationError,
     CommandExecutionError,
@@ -81,23 +79,17 @@ def _exec_dehydrated(csr):
     if not path:
         raise SaltConfigurationError(f"Dehydrated executable not found: {name}")
 
-    args = _get(__opts__, "dehydrated:args", [])
+    args = _get(__opts__, "dehydrated:args", ["--no-lock"])
     cmd = [path, *args, "--signcsr", csr]
 
-    lock = FileLock(os.path.join(__opts__['cachedir'], '.dehydrated.lock'))
+    LOGGER.debug("Execute: %s", cmd)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     try:
-        lock.acquire(timeout=300)
-
-        LOGGER.debug("Execute: %s", cmd)
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        try:
-            out, err = process.communicate(timeout=300)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            out, err = process.communicate()
-    finally:
-        lock.release()
+        out, err = process.communicate(timeout=300)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        out, err = process.communicate()
 
     if process.returncode > 0:
         raise CommandExecutionError(
