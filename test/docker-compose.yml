@@ -1,0 +1,33 @@
+version: '3.6'
+services:
+  pebble:
+    image: letsencrypt/pebble:v2.3.0
+    command: pebble -config /test/config/pebble-config.json -dnsserver 10.30.50.3:5300
+    ports:
+      - 127.0.0.1:14000:14000  # HTTPS ACME API
+      - 127.0.0.1:15000:15000  # HTTPS Management API
+    networks:
+      acmenet:
+        ipv4_address: 10.30.50.2
+  knot:
+    image: cznic/knot:2.8
+    command: knotd --socket /test/knot.sock
+    userns_mode: host
+    user: ${UID:-1000}
+    ports:
+      - 127.0.0.153:53:5300/tcp  # DNS
+      - 127.0.0.153:53:5300/udp  # DNS
+    volumes:
+      - ./fixtures/knot:/config:ro
+      - ./tmp:/test
+    networks:
+      acmenet:
+        ipv4_address: 10.30.50.3
+
+networks:
+  acmenet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.30.50.0/24

@@ -3,3 +3,7 @@ id: master
 dehydrated:
   executable: test/fixtures/dehydrated
   auth_file: test/fixtures/auth.yml
+
+acme:
+  config:
+    directory_url: https://localhost:14000/dir

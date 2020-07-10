@@ -1,0 +1,16 @@
+id: minion
+
+acme:
+  config:
+    server: https://localhost:14000/dir
+    email: certmaster@example.org
+    verify_ssl: test/fixtures/pebble.minica.pem
+
+  resolver:
+    default:
+      module: acme_ddns
+      nameserver: 127.0.0.153
+
+    example.org:
+      module: acme_ddns
+      nameserver: 127.0.0.153

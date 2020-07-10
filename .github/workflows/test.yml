@@ -1,0 +1,33 @@
+name: Python Package
+
+on: [push]
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - python: 3.6
+            env: ubuntu1804-py36-salt2017-crypt21-acme22
+          - python: 3.7
+            env: debian10-py37-salt2018-crypt26-acme31
+          - python: 3.7
+            env: py37-salt-crypt-acme
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup test environment
+      run: |
+        docker-compose --file test/docker-compose.yml up --detach
+    - name: Set up Python ${{ matrix.job.python }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.job.python }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get install --quiet --yes knot
+        python -m pip install --upgrade pip tox
+    - name: Test
+      run: tox -e ${{ matrix.job.env }}
