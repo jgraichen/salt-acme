@@ -21,12 +21,12 @@ from dns.rcode import NOERROR
 from salt.exceptions import CommandExecutionError
 
 
-def _make_record(challenge, alias=None, **_kwargs):
+def _make_record(token, alias=None, **_kwargs):
     if alias:
         name = dns.name.from_unicode(alias)
     else:
-        name = dns.name.from_unicode(f"_acme-challenge.{challenge['name']}")
-    rdata = dns.rdata.from_text(IN, TXT, str(challenge["token"]))
+        name = dns.name.from_unicode(f"_acme-challenge.{token['name']}")
+    rdata = dns.rdata.from_text(IN, TXT, str(token["token"]))
     return (name, rdata)
 
 
@@ -45,18 +45,20 @@ def _update(zone, nameserver, port=53, timeout=10, tsig=None, **_kwargs):
     rcode = answer.rcode()
 
     if rcode is not NOERROR:
-        raise CommandExecutionError(f"DNS update failed: {dns.rcode.to_text(rcode)}")
+        raise CommandExecutionError(
+            f"DNS update for {zone} failed: {dns.rcode.to_text(rcode)}"
+        )
 
 
-def install(name, challenges, ttl=120, **kwargs):
-    with _update(name, **kwargs) as u:
-        for challenge in challenges:
-            name, rdata = _make_record(challenge, **kwargs)
-            u.add(name, ttl, rdata)
+def install(name, tokens, ttl=120, **kwargs):
+    with _update(name, **kwargs) as update:
+        for token in tokens:
+            name, rdata = _make_record(token, **kwargs)
+            update.add(name, ttl, rdata)
 
 
-def remove(name, challenges, **kwargs):
-    with _update(name, **kwargs) as u:
-        for challenge in challenges:
-            name, rdata = _make_record(challenge, **kwargs)
-            u.delete(name, rdata)
+def remove(name, tokens, **kwargs):
+    with _update(name, **kwargs) as update:
+        for token in tokens:
+            name, rdata = _make_record(token, **kwargs)
+            update.delete(name, rdata)

@@ -1,0 +1,13 @@
+{
+    "hosts": [
+        "example.com",
+        "www.example.com",
+        "example.org",
+        "www.example.org"
+    ],
+    "CN": "example.com",
+    "key": {
+        "algo": "ecdsa",
+        "size": 256
+    }
+}

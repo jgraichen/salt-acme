@@ -2,8 +2,20 @@
 # pylint: disable=missing-docstring
 # pylint: disable=redefined-outer-name
 
-# def test_sign(mods):
-#     with open("test/fixtures/example.csr", "r") as f:
-#         csr = f.read()
 
-#     assert mods["acme.sign"](csr) == {}
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
+
+def test_sign(mods):
+    with open("test/fixtures/example.csr", "r") as f:
+        csr = f.read()
+
+    result = mods["acme.sign"](csr)
+    assert "text" in result
+
+    crt = x509.load_pem_x509_certificate(
+        result["text"].encode(), backend=default_backend()
+    )
+
+    assert isinstance(crt, x509.Certificate)

@@ -6,13 +6,15 @@ import sys
 import importlib.util
 import tempfile
 
-import pytest
+from contextlib import contextmanager
+from subprocess import Popen, PIPE, STDOUT
 
+import pytest
 import salt.config
 
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(os.path.join(ROOT, 'test'))
+sys.path.append(os.path.join(ROOT, "test"))
 
 
 def load_module(name, file):
@@ -23,9 +25,9 @@ def load_module(name, file):
 
 @pytest.fixture()
 def master_opts(tmpdir):
-    opts = salt.config.master_config('test/master.yml')
-    opts['cachedir'] = tmpdir
-    opts['dehydrated']['executable'] = os.path.join(ROOT, 'test/fixtures/dehydrated.sh')
+    opts = salt.config.master_config("test/master.yml")
+    opts["cachedir"] = tmpdir
+    opts["dehydrated"]["executable"] = os.path.join(ROOT, "test/fixtures/dehydrated.sh")
     return opts
 
 
@@ -56,3 +58,42 @@ def utils(opts):
 @pytest.fixture(scope="session")
 def mods(opts, utils):
     return salt.loader.minion_mods(opts, utils=utils)
+
+
+@pytest.fixture(autouse=True)
+def cleanup_zone():
+    # Always cleanup knot zones before each test
+    with knotc() as knot:
+        knot.send("zone-reload example.com")
+        knot.send("zone-reload example.org")
+
+    yield
+
+
+class knotc:
+    def __init__(self):
+        self.process = None
+
+    def __enter__(self):
+        self.process = Popen(
+            ["/usr/sbin/knotc", "--socket", "./test/tmp/knot.sock"], stdin=PIPE
+        )
+        return self
+
+    @contextmanager
+    def zone_edit(self, zone):
+        self.send(f"zone-begin {zone}")
+        yield self
+        self.send(f"zone-commit {zone}")
+
+    def set(self, data):
+        self.send(f"zone-set -- {data}")
+
+    def send(self, cmd):
+        self.process.stdin.write(cmd.encode() + b"\n")
+        self.process.stdin.flush()
+
+    def __exit__(self, *args):
+        self.process.communicate()
+        self.process.terminate()
+        self.process.wait(timeout=1)

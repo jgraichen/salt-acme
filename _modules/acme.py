@@ -12,6 +12,7 @@ import logging
 import os
 
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 _MISSING_IMPORTS = []
 
@@ -70,20 +71,6 @@ class ACME:
         self.client = client.ClientV2(self.directory, self.net)
         self.net.account = self._registration(email)
 
-    def extract_pending_dns_challenges(self, orderr: messages.OrderResource):
-        challs = []
-        for authz in orderr.authorizations:
-            if authz.body.status == messages.STATUS_PENDING:
-                for challb in authz.body.challenges:
-                    if isinstance(challb.chall, challenges.DNS01):
-                        challs.append(
-                            {
-                                "name": authz.body.identifier.value,
-                                "token": challb.chall.validation(self.net.key),
-                            }
-                        )
-        return challs
-
     def _private_key(self):
         path = os.path.join(self.base, "private.key")
         if not os.path.exists(path):
@@ -125,7 +112,7 @@ class Resolver:
         self.name = name
         self.module = module
         self.kwargs = kwargs
-        self.challenges = []
+        self.tokens = None
 
         for method in [f"{module}.install", f"{module}.remove"]:
             if method not in __salt__:
@@ -133,18 +120,35 @@ class Resolver:
                     f"ACME: Invalid resolver {name}: execution module {method} not found"
                 )
 
-    def install(self, challenges):  # pylint: disable=redefined-outer-name
-        self._invoke(f"{self.module}.install", challenges)
-        self.challenges = challenges
+    def install(self, acme, authzs):  # pylint: disable=redefined-outer-name
+        challs = []
+        tokens = []
+
+        for authz in authzs:
+            challb, response, validation = self._build(acme, authz)
+            challs.append((challb, response))
+            tokens.append({"name": authz.body.identifier.value, "token": validation})
+
+        self._invoke(f"{self.module}.install", tokens)
+        self.tokens = tokens
+
+        for (challb, response) in challs:
+            acme.client.answer_challenge(challb, response)
 
     def remove(self):
-        if self.challenges:
-            self._invoke(f"{self.module}.remove")
+        if self.tokens:
+            self._invoke(f"{self.module}.remove", self.tokens)
 
-    def _invoke(self, mod, challenges=None):  # pylint: disable=redefined-outer-name
-        if not challenges:
-            challenges = self.challenges
-        return __salt__[mod](self.name, challenges, **self.kwargs)
+    def _invoke(self, mod, tokens):  # pylint: disable=redefined-outer-name
+        return __salt__[mod](self.name, tokens, **self.kwargs)
+
+    @staticmethod
+    def _build(acme, authz):
+        for challb in authz.body.challenges:
+            if isinstance(challb.chall, challenges.DNS01):
+                response, validation = challb.response_and_validation(acme.net.key)
+                return (challb, response, validation)
+        raise KeyError(f"Missing DNS01 challenge for {authz.body.identifier.value}")
 
 
 def sign(csr):
@@ -165,28 +169,40 @@ def sign(csr):
     orderr = acme.client.new_order(csr.encode())
     grouped = defaultdict(list)
 
-    for challenge in acme.extract_pending_dns_challenges(orderr):
-        labels = challenge["name"].split(".")
+    pending = [
+        authz
+        for authz in orderr.authorizations
+        if authz.body.status == messages.STATUS_PENDING
+    ]
+
+    logging.debug("%d pending authorizations", len(pending))
+
+    for authz in pending:
+        identifier = authz.body.identifier.value
+        labels = identifier.split(".")
         for i in range(0, len(labels)):
             name = ".".join(labels[i:])
             if name in resolvers:
-                grouped[resolvers[name]].append(challenge)
+                grouped[resolvers[name]].append(authz)
                 break
         else:
             if "default" in resolvers:
-                grouped[resolvers["default"]].append(challenge)
+                grouped[resolvers["default"]].append(authz)
             else:
-                raise RuntimeError(f"ACME: No resolver for {challenge['name']} found")
+                raise RuntimeError(f"ACME: No resolver for {identifier} found")
 
     try:
-        for resolver, challs in grouped.items():
+        for resolver, authorizations in grouped.items():
             # Resolvers remember installed challenges to ease removing
             # challenges if an error happens, e.g. only resolvers having
             # installed challenges are actually invoke the remove method
-            logging.debug("Installing challenges for resolver %s...", resolver.name)
-            resolver.install(challs)
+            logging.debug("Setting up authorizations for resolver %s...", resolver.name)
+            resolver.install(acme, authorizations)
 
-        logging.debug("Challenges installed")
+        logging.debug("Finalizing order...")
+        deadline = datetime.now() + timedelta(seconds=300)
+        order = acme.client.poll_and_finalize(orderr, deadline)
+        return {"text": order.fullchain_pem}
     finally:
         for resolver in grouped.keys():
             try:
@@ -197,5 +213,3 @@ def sign(csr):
                     resolver.name,
                     err,
                 )
-
-    return None

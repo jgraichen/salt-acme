@@ -5,38 +5,10 @@
 import dns
 import pytest
 
-from contextlib import contextmanager
-from subprocess import Popen, PIPE, STDOUT
-
-from dns.update import Update
 from dns.rdatatype import TXT
 from dns.resolver import Resolver
 
-
-class knotc:
-    def __enter__(self):
-        self.process = Popen(
-            ["/usr/sbin/knotc", "--socket", "./test/tmp/knot.sock"], stdin=PIPE
-        )
-        return self
-
-    @contextmanager
-    def zone_edit(self, zone):
-        self.send(f"zone-begin {zone}")
-        yield self
-        self.send(f"zone-commit {zone}")
-
-    def set(self, data):
-        self.send(f"zone-set -- {data}")
-
-    def send(self, cmd):
-        self.process.stdin.write(cmd.encode() + b"\n")
-        self.process.stdin.flush()
-
-    def __exit__(self, *args):
-        self.process.communicate()
-        self.process.terminate()
-        self.process.wait(timeout=1)
+from conftest import knotc
 
 
 @pytest.fixture()
@@ -44,15 +16,6 @@ def resolver():
     resolver = Resolver()
     resolver.nameservers = ["127.0.0.153"]
     return resolver
-
-
-@pytest.fixture(autouse=True)
-def cleanup_zone():
-    with knotc() as knot:
-        knot.send("zone-reload example.com")
-        knot.send("zone-reload example.org")
-
-    yield
 
 
 def test_install(mods, resolver: Resolver):
