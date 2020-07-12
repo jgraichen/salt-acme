@@ -1,17 +1,12 @@
-dehydrated:
-  # The executable will be searched in PATH or can be a fully qualified path
-  executable: dehydrated
+acme:
+  config:
+    server: https://acme-v02.api.letsencrypt.org/directory # default
+    email: certmaster@example.org
 
-  # List of extra arguments to pass to dehydrated
-  args: []
-
-  # An auth file limiting minions to specific domain names. Names are extracted
-  # from subject common name and SAN.
-  #
-  # The file must a yaml file in the following format:
-  #   '*minion_pattern':
-  #     - example.org
-  #     - *.example.org
-  #
-  # Minions and domain names will be matched using glob-style patterns.
-  auth_file: None
+  resolver:
+    # Setup resolvers to install DNS01 challenges. See more in
+    # resolver documentation.
+    example.org:
+      module: acme_dns
+      nameserver: 127.0.0.153
+      tsig: hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=

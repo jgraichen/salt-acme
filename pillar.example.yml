@@ -3,14 +3,14 @@ acme:
 
   default:
     # All options can be overridden in the certificate below
-    runner: dehydrated.sign
+    runner: acme.sign
     key:
       mode: 640
       user: root
       group: root
       type: ec
       curve: secp256r1
-      size: 4096
+      size: 4096  # only with RSA keys
 
   certificate:
     example.org:
