@@ -4,32 +4,33 @@ Manage TLS certificates with ACME using the salt master for certificate
 management and authentication.
 
 All cryptographic operations are handled by `salt-pki`. Signing requests are
-send to a runner on the salt master, e.g. `dehydrated.sign`.
+send to a runner on the salt master, e.g. `acme.sign`.
 
 The runner can authenticate the minion and check if it is permitted to request
 certificates for a given domain.
 
-## Signing runners
+## Quick Start
 
-Currently only `dehydrated.sign` is supported. This runner dispatches the actual
-ACME signing to the `dehydrated` script. This script must be configured and set
-up explicitly before.
+An `acme` state is shipped with this file. It will automatically create certificates from the pillar using the `acme.sign` runner on the master.
 
-Signing requests can be limited by providing an `auth_file` in the masters
-configuration. It restricts minions to specific domain names in the subject and
-SANs:
+The master must be configured for ACME and to accept to runner calls from the minions:
 
 ```yaml
-'*.minion.id':
-  - 'example.org'
-  - '*.example.com'
+acme:
+  config:
+    server: https://acme-v02.api.letsencrypt.org/directory # default
+    email: certmaster@example.org
+
+  resolver:
+    # Setup resolvers to install DNS01 challenges. See more in
+    # runner documentation below.
+    example.org:
+      module: acme_dns
+      nameserver: 127.0.0.153
+      tsig: hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=
 ```
 
-Minions and domain names are matched using shell glob-style (`fnmatch`).
-
-See `master.example.yaml` for more master configuration options.
-
-## Pillar Example
+### Pillar Example
 
 Example: Creates certificate and private key in default location (e.g.
 `/etc/acme/example.org/{privkey.pem,fullchain.pem}`).
@@ -38,9 +39,6 @@ Includes other states (`nginx.service`) and reloads services on certificate
 changes (`nginx`).
 
 ```yaml
-states:
-  - acme
-
 acme:
   certificate:
     example.org:
@@ -49,4 +47,71 @@ acme:
         - nginx.service
       watch_in:
         - nginx
+```
+
+## Execution modules
+
+The `acme.sign` execution modules accepts a single CSR as arguments and returns an answer with the certificate chain embedded. It can be run on a minion, as well as on the master, e.g. using the runner below. Please note that execution modules must be properly synced on the master using `salt-run saltutil.sync_modules`.
+
+(TODO)
+
+## Runners
+
+The `acme.sign` runner uses the `acme.sign` execution module on the master to sign a CSR.
+
+All involved execution modules, including the modules installing challenges, must be able to run in a salt master context, instead of a minion. The salt master must be configured for the acme module (see above) and to [accept runner invocations from the minion](https://docs.saltstack.com/en/latest/ref/peer.html):
+
+```yaml
+# /etc/salt/master
+peer_run:
+  .*:
+    - acme.sign
+```
+
+## Resolver
+
+The `acme.sign` execution modules uses other modules to install and remove challenges. These resolver modules must implement a common interface:
+
+An `install` and `remove` function, both accepting a `name`, a list of `tokens` and additional arguments, passed from the resolver configuration. The `tokens` arguments is a list of `{"name": "example.org", "token": "abc....def"}` dicts.
+
+The following resolvers are included in this repository.
+
+### `acme_dns`
+
+The `acme_dns` challenge resolver sends DNS01 challenge tokens to a DNS server using DNS update (RFC 2136).
+
+Example configuration:
+
+```yaml
+acme:
+  resolver:
+    example.org:
+      module: acme_dns
+
+      # Which name server to use
+      nameserver: 127.0.0.153  # required
+      port: 53
+
+      # Zone
+      #
+      # Zone to update. If not given, the resolver name (above)
+      # is used as zone name.
+      zone: example.org
+
+      # Alias mode
+      #
+      # If set, this name will be used for the TXT records, for
+      # example with a CNAME:
+      #   _acme-challenge.example.org CNAME mychallenges.org
+      alias: mychallenges.org
+
+      # Timeout in seconds when sending the DNS update
+      timeout: 10
+
+      # TTL for added TXT records
+      ttl: 120
+
+      # Use a TSIG for authorization. Must be formatted as
+      # "<algorithm>:<name>:<secret>"
+      tsig: hmac-sha256:acme:opCLn9NM...xnoRJIo=
 ```

@@ -6,12 +6,10 @@ Installs ACME DNS01 challenges using dynamic DNS updates
 :depends: dnspython
 """
 
-import logging
+from contextlib import contextmanager
 
 import dns
 import dns.tsigkeyring
-
-from contextlib import contextmanager
 
 from dns.update import Update
 from dns.rdataclass import IN
@@ -51,14 +49,20 @@ def _update(zone, nameserver, port=53, timeout=10, tsig=None, **_kwargs):
 
 
 def install(name, tokens, ttl=120, **kwargs):
-    with _update(name, **kwargs) as update:
+    if 'zone' not in kwargs:
+        kwargs['zone'] = name
+
+    with _update(**kwargs) as update:
         for token in tokens:
             name, rdata = _make_record(token, **kwargs)
             update.add(name, ttl, rdata)
 
 
 def remove(name, tokens, **kwargs):
-    with _update(name, **kwargs) as update:
+    if 'zone' not in kwargs:
+        kwargs['zone'] = name
+
+    with _update(**kwargs) as update:
         for token in tokens:
             name, rdata = _make_record(token, **kwargs)
             update.delete(name, rdata)

@@ -8,26 +8,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        job:
-          - python: 3.6
-            env: ubuntu1804-py36-salt2017-crypt21-acme22
-          - python: 3.7
-            env: debian10-py37-salt2018-crypt26-acme31
-          - python: 3.7
-            env: py37-salt-crypt-acme
+        python: [3.7]
 
     steps:
     - uses: actions/checkout@v1
     - name: Setup test environment
-      run: |
-        docker-compose --file test/docker-compose.yml up --detach
-    - name: Set up Python ${{ matrix.job.python }}
+      run: docker-compose --file test/docker-compose.yml up --detach
+    - name: Set up Python ${{ matrix.python }}
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.job.python }}
-    - name: Install dependencies
+        python-version: ${{ matrix.python }}
+    - name: Install system tools
       run: |
         sudo apt-get install --quiet --yes knot
-        python -m pip install --upgrade pip tox
+        python -m pip install --upgrade pip
+        pip install pipenv
+    - name: Install dependencies
+      run: pipenv install --verbose --dev --skip-lock --python=${{ matrix.python }}
     - name: Test
-      run: tox -e ${{ matrix.job.env }}
+      run: pipenv run pytest -vv

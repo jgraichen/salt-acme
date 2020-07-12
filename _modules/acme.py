@@ -160,6 +160,8 @@ def sign(csr):
         default={"server": _DEFAULT_ACME_SERVER, "email": None, "verify_ssl": True},
     )
 
+    logging.debug("ACME config: %s", config)
+
     resolvers = {
         name: Resolver(name=name, **args)
         for name, args in __salt__["config.get"]("acme:resolver", {}).items()

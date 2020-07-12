@@ -18,8 +18,8 @@ def resolver():
     return resolver
 
 
-def test_install(mods, resolver: Resolver):
-    mods["acme_dns.install"](
+def test_install(minion, resolver: Resolver):
+    minion.mods["acme_dns.install"](
         "example.com",
         [{"name": "example.com", "token": "secret"}],
         nameserver="127.0.0.153",
@@ -29,8 +29,20 @@ def test_install(mods, resolver: Resolver):
     assert answer.strings == [b"secret"]
 
 
-def test_install_alias(mods, resolver: Resolver):
-    mods["acme_dns.install"](
+def test_install_zone(minion, resolver: Resolver):
+    minion.mods["acme_dns.install"](
+        "default",
+        [{"name": "example.com", "token": "secret"}],
+        nameserver="127.0.0.153",
+        zone="example.com",
+    )
+
+    answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
+    assert answer.strings == [b"secret"]
+
+
+def test_install_alias(minion, resolver: Resolver):
+    minion.mods["acme_dns.install"](
         "example.com",
         [{"name": "example.com", "token": "secret"}],
         nameserver="127.0.0.153",
@@ -41,8 +53,8 @@ def test_install_alias(mods, resolver: Resolver):
     assert answer.strings == [b"secret"]
 
 
-def test_install_tsig(mods, resolver: Resolver):
-    mods["acme_dns.install"](
+def test_install_tsig(minion, resolver: Resolver):
+    minion.mods["acme_dns.install"](
         "example.org",
         [{"name": "example.org", "token": "secret"}],
         nameserver="127.0.0.153",
@@ -53,7 +65,7 @@ def test_install_tsig(mods, resolver: Resolver):
     assert answer.strings == [b"secret"]
 
 
-def test_remove(mods, resolver: Resolver):
+def test_remove(minion, resolver: Resolver):
     """
     Removes only given challenges from zone.
     """
@@ -62,7 +74,7 @@ def test_remove(mods, resolver: Resolver):
             knot.set('_acme-challenge IN 120 TXT "value-1"')
             knot.set('_acme-challenge IN 120 TXT "value-2"')
 
-    mods["acme_dns.remove"](
+    minion.mods["acme_dns.remove"](
         "example.com",
         [{"name": "example.com", "token": "value-2"}],
         nameserver="127.0.0.153",
@@ -72,12 +84,28 @@ def test_remove(mods, resolver: Resolver):
     assert answer.strings == [b"value-1"]
 
 
-def test_remove_tsig(mods, resolver: Resolver):
+def test_remove_zone(minion, resolver: Resolver):
+    with knotc() as knot:
+        with knot.zone_edit("example.com"):
+            knot.set('_acme-challenge IN 120 TXT "secret"')
+
+    minion.mods["acme_dns.remove"](
+        "default",
+        [{"name": "example.com", "token": "secret"}],
+        nameserver="127.0.0.153",
+        zone="example.com",
+    )
+
+    with pytest.raises(dns.resolver.NXDOMAIN):
+        resolver.query("_acme-challenge.example.org.", TXT)
+
+
+def test_remove_tsig(minion, resolver: Resolver):
     with knotc() as knot:
         with knot.zone_edit("example.org"):
             knot.set('_acme-challenge IN 120 TXT "secret"')
 
-    mods["acme_dns.remove"](
+    minion.mods["acme_dns.remove"](
         "example.org",
         [{"name": "example.org", "token": "secret"}],
         nameserver="127.0.0.153",
@@ -88,16 +116,16 @@ def test_remove_tsig(mods, resolver: Resolver):
         resolver.query("_acme-challenge.example.org.", TXT)
 
 
-def test_remove_alias(mods, resolver: Resolver):
+def test_remove_alias(minion, resolver: Resolver):
     with knotc() as knot:
         with knot.zone_edit("example.com"):
             knot.set('acme IN 120 TXT "secret"')
 
-    mods["acme_dns.remove"](
+    minion.mods["acme_dns.remove"](
         "example.com",
         [{"name": "example.com", "token": "secret"}],
         nameserver="127.0.0.153",
-        alias="acme.example.com"
+        alias="acme.example.com",
     )
 
     with pytest.raises(dns.resolver.NXDOMAIN):

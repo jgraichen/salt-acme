@@ -4,11 +4,6 @@ Sign certificate signing requests (CSR) using the ACME execution module on the
 salt master.
 """
 
-def __virtual__():
-    if 'acme.sign' not in __salt__:
-        return False, f"acme module not available"
-    return True
-
 
 def sign(csr):
     """
@@ -18,4 +13,4 @@ def sign(csr):
         Certificate signing request as PEM-encoded string.
     """
 
-    return {"text": None}
+    return __salt__["salt.cmd"]("acme.sign", csr)

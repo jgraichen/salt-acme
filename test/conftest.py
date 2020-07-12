@@ -3,11 +3,10 @@
 
 import os
 import sys
-import importlib.util
 import tempfile
 
 from contextlib import contextmanager
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 
 import pytest
 import salt.config
@@ -17,18 +16,41 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(ROOT, "test"))
 
 
-def load_module(name, file):
-    path = os.path.join(ROOT, file)
-    spec = importlib.util.spec_from_file_location(name, path)
-    return spec.loader.load_module()
+class Base:
+    def __init__(self, basedir, opts):
+        self.opts = opts
+        self.opts["cachedir"] = os.path.join(basedir, "cache")
+        self.opts["pki_dir"] = os.path.join(basedir, "pki")
+        self.opts["module_dirs"] = [ROOT]
+
+        self.grains = salt.loader.grains(opts)
+        self.opts["grains"] = self.grains
+
+    @property
+    def utils(self):
+        return salt.loader.utils(self.opts)
+
+    @property
+    def mods(self):
+        return salt.loader.minion_mods(self.opts, utils=self.utils)
 
 
-@pytest.fixture()
-def master_opts(tmpdir):
-    opts = salt.config.master_config("test/master.yml")
-    opts["cachedir"] = tmpdir
-    opts["dehydrated"]["executable"] = os.path.join(ROOT, "test/fixtures/dehydrated.sh")
-    return opts
+class Master(Base):
+    def __init__(self, tmpd):
+        super().__init__(
+            os.path.join(tmpd, "master"), salt.config.master_config("test/master.yml")
+        )
+
+    @property
+    def runner(self):
+        return salt.loader.runner(self.opts, utils=self.utils)
+
+
+class Minion(Base):
+    def __init__(self, tmpd):
+        super().__init__(
+            os.path.join(tmpd, "minion"), salt.config.minion_config("test/minion.yml")
+        )
 
 
 @pytest.yield_fixture(scope="session")
@@ -38,36 +60,13 @@ def tmpd():
 
 
 @pytest.fixture(scope="session")
-def opts(tmpd):
-    opts = salt.config.minion_config(os.path.join(ROOT, "test/minion.yml"))
-    opts["cachedir"] = os.path.join(tmpd, "cache")
-    opts["pki_dir"] = os.path.join(tmpd, "pki")
-    opts["module_dirs"] = [ROOT]
-
-    grains = salt.loader.grains(opts)
-    opts["grains"] = grains
-
-    return opts
+def master(tmpd):
+    return Master(tmpd)
 
 
 @pytest.fixture(scope="session")
-def utils(opts):
-    return salt.loader.utils(opts)
-
-
-@pytest.fixture(scope="session")
-def mods(opts, utils):
-    return salt.loader.minion_mods(opts, utils=utils)
-
-
-@pytest.fixture(autouse=True)
-def cleanup_zone():
-    # Always cleanup knot zones before each test
-    with knotc() as knot:
-        knot.send("zone-reload example.com")
-        knot.send("zone-reload example.org")
-
-    yield
+def minion(tmpd):
+    return Minion(tmpd)
 
 
 class knotc:
@@ -97,3 +96,13 @@ class knotc:
         self.process.communicate()
         self.process.terminate()
         self.process.wait(timeout=1)
+
+
+@pytest.fixture(autouse=True)
+def cleanup_zone():
+    # Always cleanup knot zones before each test
+    with knotc() as knot:
+        knot.send("zone-reload example.com")
+        knot.send("zone-reload example.org")
+
+    yield

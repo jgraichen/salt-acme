@@ -1,9 +1,17 @@
 id: master
 
-dehydrated:
-  executable: test/fixtures/dehydrated
-  auth_file: test/fixtures/auth.yml
-
 acme:
   config:
-    directory_url: https://localhost:14000/dir
+    server: https://localhost:14000/dir
+    email: certmaster@example.org
+    verify_ssl: test/fixtures/pebble.minica.pem
+
+  resolver:
+    example.com:
+      module: acme_dns
+      nameserver: 127.0.0.153
+
+    example.org:
+      module: acme_dns
+      nameserver: 127.0.0.153
+      tsig: hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=

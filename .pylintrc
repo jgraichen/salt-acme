@@ -2,7 +2,7 @@
 disable=import-error
 
 [VARIABLES]
-additional-builtins=__opts__, __salt__,__utils__
+additional-builtins=__opts__, __salt__,__utils__,state
 
 [FORMAT]
 good-names=f,e,cn
