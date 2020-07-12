@@ -19,3 +19,17 @@ def test_sign(master):
     )
 
     assert isinstance(crt, x509.Certificate)
+
+
+def test_sign_broken_pem(master):
+    with open("test/fixtures/example.csr", "r") as f:
+        csr = f.read().replace("\n", " ")
+
+    result = master.runner["acme.sign"](csr)
+    assert "text" in result
+
+    crt = x509.load_pem_x509_certificate(
+        result["text"].encode(), backend=default_backend()
+    )
+
+    assert isinstance(crt, x509.Certificate)
