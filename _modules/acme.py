@@ -8,6 +8,7 @@ Sign CSRs using the ACMEv2 protocol
 """
 
 import hashlib
+import json
 import logging
 import os
 
@@ -106,7 +107,7 @@ class ACME:
             return registration
 
         with _fopen(path, "r") as f:
-            return messages.RegistrationResource.from_json(f.read())
+            return messages.RegistrationResource.from_json(json.load(f))
 
 
 class Resolver:
