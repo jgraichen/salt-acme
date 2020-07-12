@@ -25,7 +25,6 @@ try:
 except ImportError:
     _MISSING_IMPORTS.append("cryptography")
 
-
 try:
     import josepy
 except ImportError:
@@ -45,7 +44,10 @@ except ImportError:
     from salt.utils import fopen as _fopen, fpopen as _fpopen
 
 
-_DEFAULT_ACME_SERVER = "https://acme-v02.api.letsencrypt.org/directory"
+_DEFAULT_CONFIG = {
+    "server": "https://acme-v02.api.letsencrypt.org/directory",
+    "verify_ssl": True,
+}
 
 
 def __virtual__():
@@ -154,12 +156,8 @@ class Resolver:
 def sign(csr):
     """
     """
-    config = __salt__["config.get"](
-        "acme:config",
-        merge=True,
-        default={"server": _DEFAULT_ACME_SERVER, "email": None, "verify_ssl": True},
-    )
 
+    config = {**_DEFAULT_CONFIG, **__salt__["config.get"]("acme:config", default={})}
     logging.debug("ACME config: %s", config)
 
     resolvers = {
