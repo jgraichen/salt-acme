@@ -68,6 +68,27 @@ peer_run:
     - acme.sign
 ```
 
+The runner can validation signing requests using an authorization file. This file defines which minion is allowed to requests a domain:
+
+```yaml
+# /etc/salt/master
+acme:
+  runner:
+    auth_file: /etc/salt/acme.yml
+```
+
+```yaml
+# /etc/salt/acme.yml
+minion_id:
+  - example.org
+  - '*.example.org'
+
+'*.minion_id':
+  - '*'
+```
+
+Minion IDs and domain names are matched with a glob-style pattern using [`fnmatch`](https://docs.python.org/3/library/fnmatch.html).
+
 ## Resolver
 
 The `acme.sign` execution modules uses other modules to install and remove challenges. These resolver modules must implement a common interface:

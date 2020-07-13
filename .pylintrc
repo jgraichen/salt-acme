@@ -5,4 +5,4 @@ disable=import-error
 additional-builtins=__opts__, __salt__,__utils__,state
 
 [FORMAT]
-good-names=f,e,cn
+good-names=f,e,cn,fn
