@@ -1,7 +1,11 @@
 cache:
   key: ${CI_JOB_NAME}--${CI_COMMIT_REF_SLUG}
   paths:
-    - ~/.cache/pip
+    - $CI_PROJECT_DIR/.cache/pip
+    - $CI_PROJECT_DIR/.tox
+
+variables:
+  PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
 
 pylint:
   image: python:3.8
@@ -17,17 +21,17 @@ pylint:
   script:
     - tox -e $CI_JOB_NAME
 
-py37-salt2019-crypt:
+py37-salt-crypt-acme:
   extends: .base
   variables:
     IMAGE: python:3.7
 
-ubuntu1804-py36-salt2017-crypt21:
+ubuntu1804-py36-salt2017-crypt21-acme22:
   extends: .base
   variables:
     IMAGE: python:3.6
 
-debian10-py37-salt2018-crypt26:
+debian10-py37-salt2018-crypt26-acme31:
   extends: .base
   variables:
     IMAGE: python:3.7
