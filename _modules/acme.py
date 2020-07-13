@@ -15,14 +15,14 @@ import os
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from salt.exceptions import SaltConfigurationError
+
 _MISSING_IMPORTS = []
 
 try:
-    from cryptography import x509
-
     from cryptography.hazmat.backends import default_backend as _default_backend
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
 except ImportError:
     _MISSING_IMPORTS.append("cryptography")
 
@@ -35,9 +35,6 @@ try:
     from acme import client, messages, challenges  # pylint: disable=import-self
 except ImportError:
     _MISSING_IMPORTS.append("acme")
-
-
-from salt.exceptions import SaltConfigurationError
 
 try:
     from salt.utils.files import fopen as _fopen, fpopen as _fpopen
