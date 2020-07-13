@@ -9,6 +9,25 @@ send to a runner on the salt master, e.g. `acme.sign`.
 The runner can authenticate the minion and check if it is permitted to request
 certificates for a given domain.
 
+## Installation
+
+The recommended way uses salts GitFS:
+
+```yaml
+# /etc/salt/master
+gitfs_remotes:
+  - 'https://github.com/jgraichen/salt-acme.git':
+      - base: v1.0.0
+  - 'https://github.com/jgraichen/salt-pki.git':
+      - base: v1.0.0
+```
+
+The execution modules usually are used on the master too. Please synchronize the modules and runners on the master with `salt-run`:
+
+```
+$ salt-run saltutil.sync_all
+```
+
 ## Quick Start
 
 An `acme` state is shipped with this file. It will automatically create certificates from the pillar using the `acme.sign` runner on the master.
