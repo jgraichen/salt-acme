@@ -8,15 +8,26 @@ Installs ACME DNS01 challenges using dynamic DNS updates
 
 from contextlib import contextmanager
 
-import dns
-import dns.tsigkeyring
+try:
+    import dns
+    import dns.tsigkeyring
 
-from dns.update import Update
-from dns.rdataclass import IN
-from dns.rdatatype import TXT
-from dns.rcode import NOERROR
+    from dns.update import Update
+    from dns.rdataclass import IN
+    from dns.rdatatype import TXT
+    from dns.rcode import NOERROR
+
+    _HAS_DNS = True
+except ImportError:
+    _HAS_DNS = False
 
 from salt.exceptions import CommandExecutionError
+
+
+def __virtual__():
+    if not _HAS_DNS:
+        return False, "dnspython missing"
+    return True
 
 
 def _make_record(token, alias=None, **_kwargs):
@@ -49,8 +60,8 @@ def _update(zone, nameserver, port=53, timeout=10, tsig=None, **_kwargs):
 
 
 def install(name, tokens, ttl=120, **kwargs):
-    if 'zone' not in kwargs:
-        kwargs['zone'] = name
+    if "zone" not in kwargs:
+        kwargs["zone"] = name
 
     with _update(**kwargs) as update:
         for token in tokens:
@@ -59,8 +70,8 @@ def install(name, tokens, ttl=120, **kwargs):
 
 
 def remove(name, tokens, **kwargs):
-    if 'zone' not in kwargs:
-        kwargs['zone'] = name
+    if "zone" not in kwargs:
+        kwargs["zone"] = name
 
     with _update(**kwargs) as update:
         for token in tokens:
