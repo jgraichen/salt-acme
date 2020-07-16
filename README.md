@@ -37,7 +37,13 @@ The master must be configured for ACME and to accept to runner calls from the mi
 ```yaml
 acme:
   config:
-    server: https://acme-v02.api.letsencrypt.org/directory # default
+    server: https://acme-v02.api.letsencrypt.org/directory  # default
+
+    # The directory where accounts (e.g. private key, registration) are stored.
+    # Defaults to an `acme` subdirectory in salts `cachedir`.
+    account_dir: /var/cache/salt/master/acme
+
+    # Email address passed to the CA on registration
     email: certmaster@example.org
 
   resolver:

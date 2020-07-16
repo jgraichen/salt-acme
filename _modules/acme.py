@@ -45,6 +45,7 @@ except ImportError:
 _DEFAULT_CONFIG = {
     "server": "https://acme-v02.api.letsencrypt.org/directory",
     "verify_ssl": True,
+    "account_dir": False
 }
 
 
@@ -55,10 +56,17 @@ def __virtual__():
 
 
 class ACME:
-    def __init__(self, server, email=None, verify_ssl=True, **_kwargs):
-        self.base = os.path.join(
-            __opts__["cachedir"], "acme", hashlib.sha256(server.encode()).hexdigest()
-        )
+    def __init__(
+        self, server, email=None, verify_ssl=True, account_dir=None, **_kwargs
+    ):
+        if account_dir:
+            self.base = account_dir
+        else:
+            self.base = os.path.join(
+                __opts__["cachedir"],
+                "acme",
+                hashlib.sha256(server.encode()).hexdigest(),
+            )
 
         logging.info("ACME account directory: %s", self.base)
         logging.info("Using ACME server at %s", server)
