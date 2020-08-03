@@ -4,8 +4,10 @@
 Installs ACME DNS01 challenges using dynamic DNS updates
 
 :depends: dnspython
+:depends: ipaddress
 """
 
+import ipaddress
 import logging
 import time
 
@@ -24,7 +26,11 @@ try:
 except ImportError:
     _HAS_DNS = False
 
-from salt.exceptions import CommandExecutionError, TimeoutError as SaltTimeoutError
+from salt.exceptions import (
+    CommandExecutionError,
+    SaltConfigurationError,
+    TimeoutError as SaltTimeoutError,
+)
 
 
 _LOG = logging.getLogger(__name__)
@@ -45,28 +51,14 @@ def _make_record(token, alias=None, **_kwargs):
     return (name, rdata)
 
 
-def _query(nameserver, port, *args, **kwargs):
-    resolver = dns.resolver.Resolver(configure=False)
-    resolver.nameservers = [nameserver]
-    resolver.nameserver_ports = {nameserver: port}
-    return resolver.query(*args, **kwargs)
-
-
-def _query_nameserver(nameserver, port, zone):
-    resolver = dns.resolver.Resolver()
-    resolver.nameservers.insert(0, nameserver)
-    resolver.nameserver_ports[nameserver] = port
-
-    nameservers = []
-    for rdata in _query(nameserver, port, zone, "NS", raise_on_no_answer=False):
-        ns = rdata.target.to_unicode()
-        for rdtype in ("A", "AAAA"):
-            try:
-                nameservers.extend([r.to_text() for r in resolver.query(ns, rdtype)])
-            except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
-                pass
-
-    return nameservers
+def _query_addresses(name, resolver=dns.resolver):
+    addresses = []
+    for rdtype in ("A", "AAAA"):
+        try:
+            addresses.extend([r.to_text() for r in resolver.query(name, rdtype)])
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
+            pass
+    return addresses
 
 
 def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
@@ -74,10 +66,38 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
     Verify all nameservers listed as NS in `zone` serve the current or a newer
     SOA serial.
     """
+
+    # Use primary nameserver for NS lookup and as first resolver
+    # to handle local or split-horizon scenarios
+    resolver = dns.resolver.Resolver(configure=False)
+
+    try:
+        ipaddress.ip_address(nameserver)
+        resolver.nameservers = [nameserver]
+    except ValueError:
+        resolver.nameservers = _query_addresses(nameserver)
+        if not resolver.nameservers:
+            raise SaltConfigurationError(f"Nameserver not found: {nameserver}")
+
+    # All resolved address of the primary NS must use the configured port
+    resolver.nameserver_ports.update({ns: port for ns in resolver.nameservers})
+
+    # The public resolver first tries the primary NS first, otherwise falls
+    # back to the system resolver. This is used to lookup e.g. other NS names
+    # which might not be served by the primary.
+    public = dns.resolver.Resolver()
+    public.nameservers = resolver.nameservers + public.nameservers
+    public.nameserver_ports.update(resolver.nameserver_ports)
+
     # Verify SOA serial propagation to all nameserver
-    serial = _query(nameserver, port, zone, "SOA")[0].serial
+    serial = resolver.query(zone, "SOA")[0].serial
     deadline = time.monotonic() + verify_timeout
-    nameservers = _query_nameserver(nameserver, port, zone)
+
+    # Collect all NS records of the zone. We explicitly use the primary NS
+    # as the system resolver might serve internal NS in a split-horizon setup.
+    nameservers = []
+    for rdata in resolver.query(zone, "NS", raise_on_no_answer=False):
+        nameservers.extend(_query_addresses(rdata.target.to_unicode(), resolver=public))
 
     if not nameservers:
         _LOG.warning("Skip DNS record verify: No nameservers found for %s", zone)
@@ -87,7 +107,10 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
 
     while deadline > time.monotonic():
         for ns in nameservers[:]:
-            ns_serial = _query(ns, 53, zone, "SOA")[0].serial
+            # Query SOA from single NS
+            resolver = dns.resolver.Resolver(configure=False)
+            resolver.nameservers = [ns]
+            ns_serial = resolver.query(zone, "SOA")[0].serial
             if ns_serial < serial:
                 _LOG.debug("Nameserver %s still at %d...", ns, ns_serial)
             else:
