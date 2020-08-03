@@ -160,4 +160,14 @@ acme:
       # Use a TSIG for authorization. Must be formatted as
       # "<algorithm>:<name>:<secret>"
       tsig: hmac-sha256:acme:opCLn9NM...xnoRJIo=
+
+      # Verify DNS record propagation
+      #
+      # This will check all nameserver listed in the zone to
+      # have at least the serial from the update in their SOA
+      # records.
+      verify: True
+
+      # Seconds to wait for DNS propagation
+      verify_timeout: 120
 ```

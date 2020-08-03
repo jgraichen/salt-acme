@@ -1,5 +1,6 @@
 $ORIGIN example.org.
 $TTL 60
 
-@ SOA localhost. root.localhost. 1 300 100 6000 600
-@ NS 127.0.0.153
+@   SOA localhost. root.localhost. 1 300 100 6000 600
+@   NS  ns.example.org.
+ns  A   127.0.0.153

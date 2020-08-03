@@ -1,8 +1,8 @@
 [MESSAGES CONTROL]
-disable=import-error
+disable=import-error,bad-continuation
 
 [VARIABLES]
 additional-builtins=__opts__, __salt__,__utils__,state
 
 [FORMAT]
-good-names=f,e,cn,fn
+good-names=f,e,cn,fn,ns
