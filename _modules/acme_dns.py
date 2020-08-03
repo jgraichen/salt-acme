@@ -96,8 +96,12 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
     # Collect all NS records of the zone. We explicitly use the primary NS
     # as the system resolver might serve internal NS in a split-horizon setup.
     nameservers = []
+    resolvers = {}
     for rdata in resolver.query(zone, "NS", raise_on_no_answer=False):
-        nameservers.extend(_query_addresses(rdata.target.to_unicode(), resolver=public))
+        name = rdata.target.to_unicode()
+        resolvers[name] = dns.resolver.Resolver(configure=False)
+        resolvers[name].nameservers = _query_addresses(name, resolver=public)
+        nameservers.append(name)
 
     if not nameservers:
         _LOG.warning("Skip DNS record verify: No nameservers found for %s", zone)
@@ -107,10 +111,7 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
 
     while deadline > time.monotonic():
         for ns in nameservers[:]:
-            # Query SOA from single NS
-            resolver = dns.resolver.Resolver(configure=False)
-            resolver.nameservers = [ns]
-            ns_serial = resolver.query(zone, "SOA")[0].serial
+            ns_serial = resolvers[ns].query(zone, "SOA")[0].serial
             if ns_serial < serial:
                 _LOG.debug("Nameserver %s still at %d...", ns, ns_serial)
             else:
