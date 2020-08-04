@@ -51,7 +51,10 @@ def _make_record(token, alias=None, **_kwargs):
     return (name, rdata)
 
 
-def _query_addresses(name, resolver=dns.resolver):
+def _query_addresses(name, resolver=None):
+    if resolver is None:
+        resolver = dns.resolver
+
     addresses = []
     for rdtype in ("A", "AAAA"):
         try:
