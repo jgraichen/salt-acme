@@ -9,14 +9,20 @@ This project adheres to [Semantic Versioning](http://semver.org/) and [Keep a Ch
 ---
 
 ### New
-* Check DNS propagation to name servers
-* Option to configure account directory
 
 ### Changes
 
 ### Fixes
 
 ### Breaks
+
+
+## 1.1.0 - (2020-08-04)
+---
+
+### New
+* Check DNS propagation to name servers
+* Option to configure account directory
 
 
 ## 1.0.1 - (2020-07-16)

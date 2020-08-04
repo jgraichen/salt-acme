@@ -17,7 +17,7 @@ The recommended way uses salts GitFS:
 # /etc/salt/master
 gitfs_remotes:
   - 'https://github.com/jgraichen/salt-acme.git':
-      - base: v1.0.0
+      - base: v1.1.0
   - 'https://github.com/jgraichen/salt-pki.git':
       - base: v1.0.0
 ```
@@ -52,7 +52,7 @@ acme:
     example.org:
       module: acme_dns
       nameserver: 127.0.0.153
-      tsig: hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=
+      tsig: hmac-sha256:acme:opCLn9NM...xnoRJIo=
 ```
 
 ### Pillar Example
