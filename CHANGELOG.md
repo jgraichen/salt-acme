@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](http://semver.org/) and [Keep a Ch
 ---
 
 ### New
+* Check DNS propagation to name servers
 * Option to configure account directory
 
 ### Changes
