@@ -26,6 +26,11 @@ The execution modules usually are used on the master too. Please synchronize the
 
 ```
 $ salt-run saltutil.sync_all
+modules:
+    - modules.acme
+    - modules.acme_dns
+runners:
+    - modules.acme
 ```
 
 ## Quick Start
