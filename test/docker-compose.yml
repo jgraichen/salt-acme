@@ -11,15 +11,12 @@ services:
         ipv4_address: 10.30.50.2
   knot:
     image: cznic/knot:2.8
-    command: knotd --socket /test/knot.sock
-    userns_mode: host
-    user: ${UID:-1000}
+    command: knotd
     ports:
       - 127.0.0.153:53:5300/tcp  # DNS
       - 127.0.0.153:53:5300/udp  # DNS
     volumes:
       - ./fixtures/knot:/config:ro
-      - ./tmp:/test
     networks:
       acmenet:
         ipv4_address: 10.30.50.3

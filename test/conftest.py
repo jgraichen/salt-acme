@@ -75,8 +75,12 @@ class knotc:
 
     def __enter__(self):
         self.process = Popen(
-            ["/usr/sbin/knotc", "--socket", "./test/tmp/knot.sock"], stdin=PIPE
+            ["docker", "exec", "--interactive", "test_knot_1", "knotc"],
+            stdin=PIPE,
+            stdout=PIPE,
+            stderr=PIPE
         )
+
         return self
 
     @contextmanager
