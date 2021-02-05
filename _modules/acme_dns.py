@@ -146,7 +146,7 @@ def _update(zone, nameserver, port=53, timeout=10, tsig=None, verify=True, **kwa
     answer = dns.query.tcp(update, nameserver, timeout, port)
     rcode = answer.rcode()
 
-    if rcode is not NOERROR:
+    if rcode != NOERROR:
         raise CommandExecutionError(
             f"DNS update for {zone} failed: {dns.rcode.to_text(rcode)}"
         )

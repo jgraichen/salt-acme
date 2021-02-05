@@ -26,7 +26,7 @@ def test_install(minion, resolver: Resolver):
     )
 
     answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
-    assert answer.strings == [b"secret"]
+    assert list(answer.strings) == [b"secret"]
 
 
 def test_install_zone(minion, resolver: Resolver):
@@ -38,7 +38,7 @@ def test_install_zone(minion, resolver: Resolver):
     )
 
     answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
-    assert answer.strings == [b"secret"]
+    assert list(answer.strings) == [b"secret"]
 
 
 def test_install_alias(minion, resolver: Resolver):
@@ -50,7 +50,7 @@ def test_install_alias(minion, resolver: Resolver):
     )
 
     answer = resolver.query("acme.example.com.", TXT)[0]
-    assert answer.strings == [b"secret"]
+    assert list(answer.strings) == [b"secret"]
 
 
 def test_install_tsig(minion, resolver: Resolver):
@@ -62,7 +62,7 @@ def test_install_tsig(minion, resolver: Resolver):
     )
 
     answer = resolver.query("_acme-challenge.example.org.", TXT)[0]
-    assert answer.strings == [b"secret"]
+    assert list(answer.strings) == [b"secret"]
 
 
 def test_remove(minion, resolver: Resolver):
@@ -81,7 +81,7 @@ def test_remove(minion, resolver: Resolver):
     )
 
     answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
-    assert answer.strings == [b"value-1"]
+    assert list(answer.strings) == [b"value-1"]
 
 
 def test_remove_zone(minion, resolver: Resolver):
