@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring,redefined-outer-name
 
+import logging
 import os
 import sys
 import tempfile
@@ -97,7 +98,12 @@ class knotc:
         self.process.stdin.flush()
 
     def __exit__(self, *args):
-        self.process.communicate()
+        stdout = self.process.communicate()[0].decode()
+        stderr = self.process.communicate()[1].decode()
+        if stdout:
+            logging.debug("knotc: \n%s", stdout)
+        if stderr:
+            logging.debug("knotc err: \n%s", stderr)
         self.process.terminate()
         self.process.wait(timeout=1)
 
