@@ -77,10 +77,10 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
     try:
         ipaddress.ip_address(nameserver)
         resolver.nameservers = [nameserver]
-    except ValueError:
+    except ValueError as e:
         resolver.nameservers = _query_addresses(nameserver)
         if not resolver.nameservers:
-            raise SaltConfigurationError(f"Nameserver not found: {nameserver}")
+            raise SaltConfigurationError(f"Nameserver not found: {nameserver}") from e
 
     # All resolved address of the primary NS must use the configured port
     resolver.nameserver_ports.update({ns: port for ns in resolver.nameservers})
@@ -129,7 +129,7 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
 
     if nameservers:
         _LOG.error("Nameserver failed to update: %s", nameservers)
-        raise SaltTimeoutError(f"Some nameserver failed to receive DNS updates")
+        raise SaltTimeoutError("Some nameserver failed to receive DNS updates")
 
 
 @contextmanager
