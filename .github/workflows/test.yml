@@ -12,8 +12,10 @@ jobs:
         include:
           - python: '3.6'
             env: ubuntu1804-py36-salt2017-crypt21-acme22-dns115
+            pebble: v1.0.1
           - python: '3.7'
             env: debian10-py37-salt2018-crypt26-acme31-dns116
+            pebble: v1.0.1
           - python: '3.8'
             env: ubuntu2004-py38-salt3002-crypt28-acme11-dns116
 
@@ -28,4 +30,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install tox
       - run: docker-compose --file test/docker-compose.yml up --detach
+        env:
+          PEBBLE_VERSION: ${{ matrix.pebble }}
       - run: tox -e ${{ matrix.env }}

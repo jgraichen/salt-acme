@@ -1,7 +1,7 @@
 version: '3.6'
 services:
   pebble:
-    image: letsencrypt/pebble:v2.3.0
+    image: letsencrypt/pebble:${PEBBLE_VERSION:-v2.3.1}
     command: pebble -config /test/config/pebble-config.json -dnsserver 10.30.50.3:5300
     environment:
       PEBBLE_WFE_NONCEREJECT: 0
