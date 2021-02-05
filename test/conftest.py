@@ -98,8 +98,9 @@ class knotc:
         self.process.stdin.flush()
 
     def __exit__(self, *args):
-        stdout = self.process.communicate()[0].decode()
-        stderr = self.process.communicate()[1].decode()
+        result = self.process.communicate()
+        stdout = result[0].decode()
+        stderr = result[1].decode()
         if stdout:
             logging.debug("knotc: \n%s", stdout)
         if stderr:
