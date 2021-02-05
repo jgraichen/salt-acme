@@ -18,6 +18,8 @@ jobs:
             pebble: v1.0.1
           - python: '3.8'
             env: ubuntu2004-py38-salt3002-crypt28-acme11-dns116
+          - python: '3.9'
+            env: py3-salt-crypt-acme-dns
 
     steps:
       - uses: actions/checkout@v1
