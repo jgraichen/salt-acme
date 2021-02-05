@@ -1,0 +1,33 @@
+# -*- vim: ft=yaml:sw=2 -*-
+name: Test
+
+on: [push]
+
+jobs:
+  Test:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: '3.6'
+            env: ubuntu1804-py36-salt2017-crypt21-acme22-dns115
+          - python: '3.7'
+            env: debian10-py37-salt2018-crypt26-acme31-dns116
+          - python: '3.8'
+            env: ubuntu2004-py38-salt3002-crypt28-acme11-dns116
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install dependencies
+        run: |
+          apt-get --quiet update
+          apt-get --quiet --yes install knot
+          python -m pip install --upgrade pip
+          python -m pip install tox
+      - run: docker-compose --file test/docker-compose.yml up --detach
+      - run: tox -e ${{ matrix.env }}
