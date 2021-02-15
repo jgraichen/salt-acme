@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 # pylint: disable=redefined-outer-name
-# pylint: disable=bad-continuation
 
 import os
 
@@ -52,11 +51,11 @@ def test_sign_broken_pem(fn):
     """
     csr = read_fixture("example.csr")
 
-    def fx(cmd, pem):
+    def check_fn(cmd, pem):
         assert cmd == "acme.sign"
         assert pem == csr.strip()
 
-    with patch.dict(fn.__globals__["__salt__"], {"salt.cmd": fx}):
+    with patch.dict(fn.__globals__["__salt__"], {"salt.cmd": check_fn}):
         fn(csr.replace("\n", " "))
 
 
