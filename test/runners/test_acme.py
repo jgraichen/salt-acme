@@ -16,8 +16,8 @@ from salt.exceptions import AuthorizationError
 
 
 @pytest.fixture
-def fn(master):
-    return master.runner["acme.sign"]
+def runner(master):
+    return master.runner
 
 
 def read_fixture(file, mode="r"):
@@ -25,13 +25,13 @@ def read_fixture(file, mode="r"):
         return f.read()
 
 
-def test_sign(fn):
+def test_sign(runner):
     """
     One full roundtrip test. The CSR is passed to the `acme.sign` execution
     module and a dict with {"text": "<certificate>"} is returned.
     """
     csr = read_fixture("example.csr")
-    result = fn(csr)
+    result = runner["acme.sign"](csr)
     assert "text" in result
 
     crt = x509.load_pem_x509_certificate(
@@ -41,7 +41,7 @@ def test_sign(fn):
     assert isinstance(crt, x509.Certificate)
 
 
-def test_sign_broken_pem(fn):
+def test_sign_broken_pem(runner):
     """
     When a minion invokes a runner using `publish.runner`, the arguments can get
     scrambled. Newlines might be replaced with single spaces.
@@ -55,11 +55,11 @@ def test_sign_broken_pem(fn):
         assert cmd == "acme.sign"
         assert pem == csr.strip()
 
-    with patch.dict(fn.__globals__["__salt__"], {"salt.cmd": check_fn}):
-        fn(csr.replace("\n", " "))
+    with patch.dict(runner.pack["__salt__"], {"salt.cmd": check_fn}):
+        runner["acme.sign"](csr.replace("\n", " "))
 
 
-def test_sign_authorize(fn, tmpdir):
+def test_sign_authorize(runner, tmpdir):
     auth_file = os.path.join(tmpdir, "auth.yml")
 
     with open(auth_file, "w") as f:
@@ -71,14 +71,41 @@ def test_sign_authorize(fn, tmpdir):
         return True
 
     with patch.dict(
-        fn.__globals__["__opts__"],
+        runner.opts,
         {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
     ):
-        with patch.dict(fn.__globals__["__salt__"], {"salt.cmd": fxcmd}):
-            assert fn(read_fixture("example.csr"))
+        with patch.dict(runner.pack["__salt__"], {"salt.cmd": fxcmd}):
+            assert runner["acme.sign"](read_fixture("example.csr"))
 
 
-def test_sign_reject_unauthorized(fn, tmpdir):
+def test_sign_authorize_multiple_rules(runner, tmpdir):
+    """
+    Test that all matching rules are applied.
+    """
+    auth_file = os.path.join(tmpdir, "auth.yml")
+
+    with open(auth_file, "w") as f:
+        yaml.safe_dump(
+            {
+                "minion": ["example.org"],
+                "minion*": ["*.example.org"],
+                "*": ["example.com", "*.example.com"],
+            },
+            f,
+        )
+
+    def fxcmd(*_args):
+        return True
+
+    with patch.dict(
+        runner.opts,
+        {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
+    ):
+        with patch.dict(runner.pack["__salt__"], {"salt.cmd": fxcmd}):
+            assert runner["acme.sign"](read_fixture("example.csr"))
+
+
+def test_sign_reject_unauthorized(runner, tmpdir):
     auth_file = os.path.join(tmpdir, "auth.yml")
     csr = read_fixture("example.csr")
 
@@ -86,10 +113,10 @@ def test_sign_reject_unauthorized(fn, tmpdir):
         yaml.safe_dump({"minion": ["example.org", "*.example.org"]}, f)
 
     with patch.dict(
-        fn.__globals__["__opts__"],
+        runner.opts,
         {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
     ):
         with pytest.raises(AuthorizationError) as e:
-            fn(csr)
+            runner["acme.sign"](csr)
 
         assert str(e.value) == "Unauthorized domains: example.com, www.example.com"
