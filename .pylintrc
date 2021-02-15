@@ -2,7 +2,7 @@
 disable=import-error,bad-continuation
 
 [VARIABLES]
-additional-builtins=__opts__, __salt__,__utils__,state
+additional-builtins=__opts__, __salt__,__utils__,state,include
 
 [FORMAT]
 good-names=cn,d,e,f,fn,ns
