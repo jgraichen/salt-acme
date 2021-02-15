@@ -24,6 +24,14 @@ class Base:
         self.opts["pki_dir"] = os.path.join(basedir, "pki")
         self.opts["module_dirs"] = [ROOT]
 
+        # Setup file_roots to include `acme` state directory only
+        file_root = os.path.join(basedir, "states")
+        os.makedirs(file_root)
+        os.symlink(os.path.join(ROOT, "acme"), os.path.join(file_root, "acme"))
+        self.opts["file_roots"] = {
+            "base": [file_root, os.path.join(ROOT, "test/fixtures/states")]
+        }
+
         self.grains = salt.loader.grains(opts)
         self.opts["grains"] = self.grains
 
@@ -79,7 +87,7 @@ class knotc:
             ["docker", "exec", "--interactive", "test_knot_1", "knotc"],
             stdin=PIPE,
             stdout=PIPE,
-            stderr=PIPE
+            stderr=PIPE,
         )
 
         return self

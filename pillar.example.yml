@@ -2,8 +2,17 @@ acme:
   basedir: /etc/acme
 
   default:
-    # All options can be overridden in the certificate below
+    # All options can be overridden in each specific `acme:certificate:<name>`
+    # pillar item.
     runner: acme.sign
+
+    # Override default certificate file path e.g. for HAProxy dynamic
+    # certificate storage: `/etc/haproxy/certs/{name}.crt`
+    #
+    # `{name}` is replaced with certificate name, e.g. `example.org` for example
+    # certificate config below.
+    name: /etc/acme/{name}/fullchain.pem
+
     key:
       mode: 640
       user: root
@@ -11,6 +20,10 @@ acme:
       type: ec
       curve: secp256r1
       size: 4096  # only with RSA keys
+
+      # Override default key file path, e.g. for HAProxy dynamic certificate
+      # storage: `/etc/haproxy/certs/{name}.crt.key`
+      name: /etc/haproxy/certs/{name}.crt.key
 
   certificate:
     example.org:

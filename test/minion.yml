@@ -1,4 +1,5 @@
 id: minion
+file_client: local
 
 acme:
   config:
