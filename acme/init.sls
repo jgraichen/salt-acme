@@ -16,6 +16,8 @@ for name in certs.keys():
     if "domains" not in cert:
         cert["domains"] = [name]
 
+    create_directories = cert.pop("create_directories", True)
+
     keyargs = {"require": []}
     fileargs = {"mode": 640}
 
@@ -33,15 +35,18 @@ for name in certs.keys():
     pkey_file = pkey_name.format(name=name)
 
     pkey_dir = os.path.dirname(pkey_file)
-    state(pkey_dir).file.directory(makedirs=True)
-
     cert_dir = os.path.dirname(cert_file)
-    state(cert_dir).file.directory(makedirs=True)
+
+    if create_directories:
+        state(pkey_dir).file.directory(makedirs=True)
+        state(cert_dir).file.directory(makedirs=True)
 
     keyargs["require"].append({"file": pkey_dir})
 
     state(pkey_file).pki.private_key(**keyargs)
-    state(pkey_file).file.managed(replace=False, require=[{"pki": pkey_file}], **fileargs)
+    state(pkey_file).file.managed(
+        replace=False, require=[{"pki": pkey_file}], **fileargs
+    )
 
     if "include" in cert:
         for i in cert.pop("include", []):

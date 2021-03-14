@@ -107,6 +107,39 @@ def test_state(sls):
     )
 
 
+def test_state_nodir(sls):
+    state = sls(
+        """
+        acme:
+            basedir: /etc/acme
+
+            default:
+                # All options can be overridden in the certificate below
+                runner: acme.sign
+                key:
+                    mode: 640
+                    user: root
+                    group: root
+                    type: ec
+                    curve: secp256r1
+                    size: 4096  # only with RSA keys
+
+            certificate:
+                example.org:
+                    create_directories: False
+                    domains:
+                        - example.org
+                        - www.example.org
+                    include:
+                        - nginx.service
+                    watch_in:
+                        - service: nginx
+        """
+    )
+
+    assert "/etc/acme/example.org" not in state
+
+
 def test_state_name(sls):
     """
     If no `domains` key is present the certificate name (pillar key) will be
