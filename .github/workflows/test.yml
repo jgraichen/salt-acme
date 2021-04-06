@@ -1,7 +1,9 @@
 # -*- vim: ft=yaml:sw=2 -*-
 name: Test
 
-on: [push]
+on:
+  - push
+  - pull_request
 
 jobs:
   Test:
