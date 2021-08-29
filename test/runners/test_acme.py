@@ -12,6 +12,7 @@ import yaml
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
+import salt.version
 from salt.exceptions import AuthorizationError
 
 
@@ -24,6 +25,15 @@ def read_fixture(file, mode="r"):
     with open(os.path.join("test/fixtures", file), mode) as f:
         return f.read()
 
+
+def _patch_cmd(runner, fn):
+    # Salt 3003+ changed how the __salt__ global is handled inside the loader.
+    # To patch that in tests, we need to target the loader directly instead of a
+    # pack as in previous versions.
+    if salt.version.__version__ > '3003':
+        return patch.dict(runner, {"salt.cmd": fn})
+    else:
+        return patch.dict(runner.pack["__salt__"], {"salt.cmd": fn})
 
 def test_sign(runner):
     """
@@ -55,7 +65,7 @@ def test_sign_broken_pem(runner):
         assert cmd == "acme.sign"
         assert pem == csr.strip()
 
-    with patch.dict(runner.pack["__salt__"], {"salt.cmd": check_fn}):
+    with _patch_cmd(runner, check_fn):
         runner["acme.sign"](csr.replace("\n", " "))
 
 
@@ -74,7 +84,7 @@ def test_sign_authorize(runner, tmpdir):
         runner.opts,
         {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
     ):
-        with patch.dict(runner.pack["__salt__"], {"salt.cmd": fxcmd}):
+        with _patch_cmd(runner, fxcmd):
             assert runner["acme.sign"](read_fixture("example.csr"))
 
 
@@ -101,7 +111,7 @@ def test_sign_authorize_multiple_rules(runner, tmpdir):
         runner.opts,
         {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
     ):
-        with patch.dict(runner.pack["__salt__"], {"salt.cmd": fxcmd}):
+        with _patch_cmd(runner, fxcmd):
             assert runner["acme.sign"](read_fixture("example.csr"))
 
 
