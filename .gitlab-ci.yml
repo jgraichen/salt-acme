@@ -8,7 +8,7 @@ variables:
   PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
 
 pylint:
-  image: python:3.10
+  image: python:3.11
   before_script:
     - python -m pip install pylint
   script:
