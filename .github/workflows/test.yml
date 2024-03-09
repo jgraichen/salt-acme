@@ -13,8 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: '3.9'
-            env: py3-salt-crypt-acme-dns
+          - python: '3.10'
+            env: py3-salt3006-crypt-acme-dns
+          - python: '3.10'
+            env: py3-salt3005-crypt-acme-dns
           - python: '3.9'
             env: debian11-py39-salt3002-crypt33-acme112-dns20
           - python: '3.8'

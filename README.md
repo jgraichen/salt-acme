@@ -17,7 +17,7 @@ The recommended way uses salts GitFS:
 # /etc/salt/master
 gitfs_remotes:
   - 'https://github.com/jgraichen/salt-acme.git':
-      - base: v1.1.0
+      - base: v1.2.0
   - 'https://github.com/jgraichen/salt-pki.git':
       - base: v1.0.0
 ```
