@@ -4,7 +4,6 @@
 
 import pytest
 import yaml
-
 from matchlib import Partial
 
 

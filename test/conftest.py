@@ -5,13 +5,11 @@ import logging
 import os
 import sys
 import tempfile
-
 from contextlib import contextmanager
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 import pytest
 import salt.config
-
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(ROOT, "test"))

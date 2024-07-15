@@ -4,11 +4,9 @@
 
 import dns
 import pytest
-
+from conftest import knotc
 from dns.rdatatype import TXT
 from dns.resolver import Resolver
-
-from conftest import knotc
 
 
 @pytest.fixture()

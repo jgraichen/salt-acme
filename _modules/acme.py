@@ -11,7 +11,6 @@ import hashlib
 import json
 import logging
 import os
-
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -32,20 +31,22 @@ except ImportError:
     _MISSING_IMPORTS.append("josepy")
 
 try:
-    from acme import client, messages, challenges  # pylint: disable=import-self
+    from acme import challenges, client, messages  # pylint: disable=import-self
 except ImportError:
     _MISSING_IMPORTS.append("acme")
 
 try:
-    from salt.utils.files import fopen as _fopen, fpopen as _fpopen
+    from salt.utils.files import fopen as _fopen
+    from salt.utils.files import fpopen as _fpopen
 except ImportError:
-    from salt.utils import fopen as _fopen, fpopen as _fpopen
+    from salt.utils import fopen as _fopen
+    from salt.utils import fpopen as _fpopen
 
 
 _DEFAULT_CONFIG = {
     "server": "https://acme-v02.api.letsencrypt.org/directory",
     "verify_ssl": True,
-    "account_dir": False
+    "account_dir": False,
 }
 
 
@@ -140,7 +141,7 @@ class Resolver:
         self._invoke(f"{self.module}.install", tokens)
         self.tokens = tokens
 
-        for (challb, response) in challs:
+        for challb, response in challs:
             acme.client.answer_challenge(challb, response)
 
     def remove(self):
@@ -160,8 +161,7 @@ class Resolver:
 
 
 def sign(csr):
-    """
-    """
+    """ """
 
     config = {**_DEFAULT_CONFIG, **__salt__["config.get"]("acme:config", default={})}
     logging.debug("ACME config: %s", config)

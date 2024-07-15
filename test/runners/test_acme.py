@@ -3,16 +3,13 @@
 # pylint: disable=redefined-outer-name
 
 import os
-
 from unittest.mock import patch
 
 import pytest
+import salt.version
 import yaml
-
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-
-import salt.version
 from salt.exceptions import AuthorizationError
 
 
@@ -30,10 +27,11 @@ def _patch_cmd(runner, fn):
     # Salt 3003+ changed how the __salt__ global is handled inside the loader.
     # To patch that in tests, we need to target the loader directly instead of a
     # pack as in previous versions.
-    if salt.version.__version__ > '3003':
+    if salt.version.__version__ > "3003":
         return patch.dict(runner, {"salt.cmd": fn})
     else:
         return patch.dict(runner.pack["__salt__"], {"salt.cmd": fn})
+
 
 def test_sign(runner):
     """

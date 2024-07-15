@@ -10,17 +10,15 @@ Installs ACME DNS01 challenges using dynamic DNS updates
 import ipaddress
 import logging
 import time
-
 from contextlib import contextmanager
 
 try:
     import dns
     import dns.tsigkeyring
-
-    from dns.update import Update
+    from dns.rcode import NOERROR
     from dns.rdataclass import IN
     from dns.rdatatype import TXT
-    from dns.rcode import NOERROR
+    from dns.update import Update
 
     _HAS_DNS = True
 except ImportError:
@@ -29,9 +27,10 @@ except ImportError:
 from salt.exceptions import (
     CommandExecutionError,
     SaltConfigurationError,
+)
+from salt.exceptions import (
     TimeoutError as SaltTimeoutError,
 )
-
 
 _LOG = logging.getLogger(__name__)
 

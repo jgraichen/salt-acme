@@ -9,6 +9,7 @@ salt master.
 import fnmatch
 import logging
 import re
+
 import yaml
 
 _MISSING_MODULES = []
@@ -19,14 +20,13 @@ try:
 except ImportError:
     _MISSING_MODULES.append("cryptography")
 
-from salt.exceptions import SaltConfigurationError, AuthorizationError
+from salt.exceptions import AuthorizationError, SaltConfigurationError
 
 try:
     from salt.utils.data import traverse_dict_and_list
     from salt.utils.files import fopen
 except ImportError:
-    from salt.utils import traverse_dict_and_list
-    from salt.utils import fopen
+    from salt.utils import fopen, traverse_dict_and_list
 
 
 _REGEXP_CSR = re.compile(
