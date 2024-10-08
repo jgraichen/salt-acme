@@ -5,16 +5,7 @@ authors = [{ name = "Jan Graichen", email = "jgraichen@altimos.de" }]
 requires-python = ">=3.8.2,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
-dependencies = ["salt", "acme", "cryptography", "dnspython"]
-
-[tool.pdm]
-[[tool.pdm.source]]
-url = "https://pypi.python.org/simple"
-verify_ssl = true
-name = "pypi"
-
-[tool.pdm.dev-dependencies]
-dev = ["matchlib", "pytest", "ruff", "tox"]
+dependencies = ["salt", "acme", "cryptography", "dnspython~=2.0"]
 
 [tool.pyright]
 include = ["salt_tower", "test"]
@@ -31,3 +22,6 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 extend-select = ["I"]
+
+[tool.uv]
+dev-dependencies = ["matchlib", "pytest", "ruff", "tox"]

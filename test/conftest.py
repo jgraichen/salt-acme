@@ -82,7 +82,7 @@ class knotc:
 
     def __enter__(self):
         self.process = Popen(
-            ["docker", "exec", "--interactive", "test_knot_1", "knotc"],
+            ["docker", "exec", "--interactive", "test-knot-1", "knotc"],
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
