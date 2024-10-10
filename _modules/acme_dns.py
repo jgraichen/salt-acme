@@ -57,7 +57,7 @@ def _query_addresses(name, resolver=None):
     addresses = []
     for rdtype in ("A", "AAAA"):
         try:
-            addresses.extend([r.to_text() for r in resolver.query(name, rdtype)])
+            addresses.extend([r.to_text() for r in resolver.resolve(name, rdtype)])
         except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
             pass
     return addresses
@@ -92,14 +92,14 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
     public.nameserver_ports.update(resolver.nameserver_ports)
 
     # Verify SOA serial propagation to all nameserver
-    serial = resolver.query(zone, "SOA")[0].serial
+    serial = resolver.resolve(zone, "SOA")[0].serial
     deadline = time.monotonic() + verify_timeout
 
     # Collect all NS records of the zone. We explicitly use the primary NS
     # as the system resolver might serve internal NS in a split-horizon setup.
     nameservers = []
     resolvers = {}
-    for rdata in resolver.query(zone, "NS", raise_on_no_answer=False):
+    for rdata in resolver.resolve(zone, "NS", raise_on_no_answer=False):
         name = rdata.target.to_unicode()
         resolvers[name] = dns.resolver.Resolver(configure=False)
         resolvers[name].nameservers = _query_addresses(name, resolver=public)
@@ -113,7 +113,7 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
 
     while deadline > time.monotonic():
         for ns in nameservers[:]:
-            ns_serial = resolvers[ns].query(zone, "SOA")[0].serial
+            ns_serial = resolvers[ns].resolve(zone, "SOA")[0].serial
             if ns_serial < serial:
                 _LOG.debug("Nameserver %s still at %d...", ns, ns_serial)
             else:

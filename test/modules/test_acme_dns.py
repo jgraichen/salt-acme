@@ -23,7 +23,7 @@ def test_install(minion, resolver: Resolver):
         nameserver="127.0.0.153",
     )
 
-    answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
+    answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
     assert list(answer.strings) == [b"secret"]
 
 
@@ -35,7 +35,7 @@ def test_install_zone(minion, resolver: Resolver):
         zone="example.com",
     )
 
-    answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
+    answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
     assert list(answer.strings) == [b"secret"]
 
 
@@ -47,7 +47,7 @@ def test_install_alias(minion, resolver: Resolver):
         alias="acme.example.com",
     )
 
-    answer = resolver.query("acme.example.com.", TXT)[0]
+    answer = resolver.resolve("acme.example.com.", TXT)[0]
     assert list(answer.strings) == [b"secret"]
 
 
@@ -59,7 +59,7 @@ def test_install_tsig(minion, resolver: Resolver):
         tsig="hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=",
     )
 
-    answer = resolver.query("_acme-challenge.example.org.", TXT)[0]
+    answer = resolver.resolve("_acme-challenge.example.org.", TXT)[0]
     assert list(answer.strings) == [b"secret"]
 
 
@@ -78,7 +78,7 @@ def test_remove(minion, resolver: Resolver):
         nameserver="127.0.0.153",
     )
 
-    answer = resolver.query("_acme-challenge.example.com.", TXT)[0]
+    answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
     assert list(answer.strings) == [b"value-1"]
 
 
@@ -95,7 +95,7 @@ def test_remove_zone(minion, resolver: Resolver):
     )
 
     with pytest.raises(dns.resolver.NXDOMAIN):
-        resolver.query("_acme-challenge.example.org.", TXT)
+        resolver.resolve("_acme-challenge.example.org.", TXT)
 
 
 def test_remove_tsig(minion, resolver: Resolver):
@@ -111,7 +111,7 @@ def test_remove_tsig(minion, resolver: Resolver):
     )
 
     with pytest.raises(dns.resolver.NXDOMAIN):
-        resolver.query("_acme-challenge.example.org.", TXT)
+        resolver.resolve("_acme-challenge.example.org.", TXT)
 
 
 def test_remove_alias(minion, resolver: Resolver):
@@ -127,4 +127,4 @@ def test_remove_alias(minion, resolver: Resolver):
     )
 
     with pytest.raises(dns.resolver.NXDOMAIN):
-        resolver.query("acme.example.org.", TXT)
+        resolver.resolve("acme.example.org.", TXT)
