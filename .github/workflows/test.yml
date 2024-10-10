@@ -8,7 +8,7 @@ on:
 
 jobs:
   Test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +36,7 @@ jobs:
       - run: uv run tox -e ${{ matrix.env }} -- -vv
 
   ruff-check:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v2
@@ -49,7 +49,7 @@ jobs:
       - run: uv run ruff check --no-fix --diff
 
   ruff-format:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v2
