@@ -1,8 +1,8 @@
 [project]
 name = "salt-acme"
-version = "1.2.0"
+version = "1.3.0"
 authors = [{ name = "Jan Graichen", email = "jgraichen@altimos.de" }]
-requires-python = ">=3.8.2,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = ["salt", "acme", "cryptography", "dnspython~=2.0"]
