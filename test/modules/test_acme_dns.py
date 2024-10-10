@@ -2,11 +2,11 @@
 # pylint: disable=missing-docstring
 # pylint: disable=redefined-outer-name
 
-import dns
+
 import pytest
 from conftest import knotc
 from dns.rdatatype import TXT
-from dns.resolver import Resolver
+from dns.resolver import NXDOMAIN, Resolver
 
 
 @pytest.fixture()
@@ -24,7 +24,19 @@ def test_install(minion, resolver: Resolver):
     )
 
     answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
-    assert list(answer.strings) == [b"secret"]
+    assert list(answer.strings) == [b"secret"]  # type: ignore
+
+
+def test_install_name_and_port(minion, resolver: Resolver):
+    minion.mods["acme_dns.install"](
+        "example.com",
+        [{"name": "example.com", "token": "secret"}],
+        nameserver="localhost",
+        port=5300,
+    )
+
+    answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
+    assert list(answer.strings) == [b"secret"]  # type: ignore
 
 
 def test_install_zone(minion, resolver: Resolver):
@@ -36,7 +48,7 @@ def test_install_zone(minion, resolver: Resolver):
     )
 
     answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
-    assert list(answer.strings) == [b"secret"]
+    assert list(answer.strings) == [b"secret"]  # type: ignore
 
 
 def test_install_alias(minion, resolver: Resolver):
@@ -48,7 +60,7 @@ def test_install_alias(minion, resolver: Resolver):
     )
 
     answer = resolver.resolve("acme.example.com.", TXT)[0]
-    assert list(answer.strings) == [b"secret"]
+    assert list(answer.strings) == [b"secret"]  # type: ignore
 
 
 def test_install_tsig(minion, resolver: Resolver):
@@ -60,7 +72,7 @@ def test_install_tsig(minion, resolver: Resolver):
     )
 
     answer = resolver.resolve("_acme-challenge.example.org.", TXT)[0]
-    assert list(answer.strings) == [b"secret"]
+    assert list(answer.strings) == [b"secret"]  # type: ignore
 
 
 def test_remove(minion, resolver: Resolver):
@@ -79,7 +91,7 @@ def test_remove(minion, resolver: Resolver):
     )
 
     answer = resolver.resolve("_acme-challenge.example.com.", TXT)[0]
-    assert list(answer.strings) == [b"value-1"]
+    assert list(answer.strings) == [b"value-1"]  # type: ignore
 
 
 def test_remove_zone(minion, resolver: Resolver):
@@ -94,7 +106,7 @@ def test_remove_zone(minion, resolver: Resolver):
         zone="example.com",
     )
 
-    with pytest.raises(dns.resolver.NXDOMAIN):
+    with pytest.raises(NXDOMAIN):
         resolver.resolve("_acme-challenge.example.org.", TXT)
 
 
@@ -110,7 +122,7 @@ def test_remove_tsig(minion, resolver: Resolver):
         tsig="hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=",
     )
 
-    with pytest.raises(dns.resolver.NXDOMAIN):
+    with pytest.raises(NXDOMAIN):
         resolver.resolve("_acme-challenge.example.org.", TXT)
 
 
@@ -126,5 +138,5 @@ def test_remove_alias(minion, resolver: Resolver):
         alias="acme.example.com",
     )
 
-    with pytest.raises(dns.resolver.NXDOMAIN):
+    with pytest.raises(NXDOMAIN):
         resolver.resolve("acme.example.org.", TXT)

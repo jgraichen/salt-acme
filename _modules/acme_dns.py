@@ -1,23 +1,29 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
+# pyright: reportUnboundVariable=false
 """
 Installs ACME DNS01 challenges using dynamic DNS updates
 
 :depends: dnspython
-:depends: ipaddress
 """
 
-import ipaddress
 import logging
+import socket
 import time
 from contextlib import contextmanager
 
 try:
     import dns
+    import dns.inet
+    import dns.name
+    import dns.query
+    import dns.rcode
+    import dns.rdata
+    import dns.resolver
     import dns.tsigkeyring
+    from dns.nameserver import Do53Nameserver
     from dns.rcode import NOERROR
-    from dns.rdataclass import IN
-    from dns.rdatatype import TXT
+    from dns.resolver import Resolver
     from dns.update import Update
 
     _HAS_DNS = True
@@ -46,64 +52,43 @@ def _make_record(token, alias=None, **_kwargs):
         name = dns.name.from_unicode(alias)
     else:
         name = dns.name.from_unicode(f"_acme-challenge.{token['name']}")
-    rdata = dns.rdata.from_text(IN, TXT, str(token["token"]))
+    rdata = dns.rdata.from_text("IN", "TXT", str(token["token"]))
     return (name, rdata)
 
 
-def _query_addresses(name, resolver=None):
-    if resolver is None:
-        resolver = dns.resolver
-
-    addresses = []
-    for rdtype in ("A", "AAAA"):
-        try:
-            addresses.extend([r.to_text() for r in resolver.resolve(name, rdtype)])
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
-            pass
-    return addresses
-
-
-def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
+def _verify(address, port, zone, verify_timeout=120, **_kwargs):
     """
     Verify all nameservers listed as NS in `zone` serve the current or a newer
     SOA serial.
     """
 
-    # Use primary nameserver for NS lookup and as first resolver
-    # to handle local or split-horizon scenarios
-    resolver = dns.resolver.Resolver(configure=False)
+    # Use primary nameserver for NS lookup and as first resolver to
+    # handle local or split-horizon scenarios
+    resolver = Resolver(configure=False)
+    resolver.nameservers = [Do53Nameserver(address, port)]
 
-    try:
-        ipaddress.ip_address(nameserver)
-        resolver.nameservers = [nameserver]
-    except ValueError as e:
-        resolver.nameservers = _query_addresses(nameserver)
-        if not resolver.nameservers:
-            raise SaltConfigurationError(f"Nameserver not found: {nameserver}") from e
-
-    # All resolved address of the primary NS must use the configured port
-    resolver.nameserver_ports.update({ns: port for ns in resolver.nameservers})
-
-    # The public resolver first tries the primary NS first, otherwise falls
-    # back to the system resolver. This is used to lookup e.g. other NS names
-    # which might not be served by the primary.
-    public = dns.resolver.Resolver()
-    public.nameservers = resolver.nameservers + public.nameservers
-    public.nameserver_ports.update(resolver.nameserver_ports)
+    # The public resolver first tries the primary NS first, otherwise
+    # falls back to the system resolver. This is used to lookup e.g.
+    # other NS names which might not be served by the primary.
+    public = Resolver()
+    public.nameservers = resolver.nameservers + public.nameservers  # type: ignore
 
     # Verify SOA serial propagation to all nameserver
-    serial = resolver.resolve(zone, "SOA")[0].serial
+    serial = resolver.resolve(zone, "SOA")[0].serial  # type: ignore
     deadline = time.monotonic() + verify_timeout
 
-    # Collect all NS records of the zone. We explicitly use the primary NS
-    # as the system resolver might serve internal NS in a split-horizon setup.
+    # Collect all NS records of the zone. We explicitly use the primary
+    # NS as the system resolver might serve internal NS in a
+    # split-horizon setup.
     nameservers = []
     resolvers = {}
-    for rdata in resolver.resolve(zone, "NS", raise_on_no_answer=False):
+    for rdata in resolver.resolve(zone, "NS", raise_on_no_answer=False):  # type: ignore
         name = rdata.target.to_unicode()
-        resolvers[name] = dns.resolver.Resolver(configure=False)
-        resolvers[name].nameservers = _query_addresses(name, resolver=public)
-        nameservers.append(name)
+        addrs = list(public.resolve_name(name).addresses())
+        if addrs:
+            resolvers[name] = Resolver(configure=False)
+            resolvers[name].nameservers = list(public.resolve_name(name).addresses())
+            nameservers.append(name)
 
     if not nameservers:
         _LOG.warning("Skip DNS record verify: No nameservers found for %s", zone)
@@ -133,6 +118,21 @@ def _verify(nameserver, port, zone, verify_timeout=120, **_kwargs):
 
 @contextmanager
 def _update(zone, nameserver, port=53, timeout=10, tsig=None, verify=True, **kwargs):
+    if dns.inet.is_address(nameserver):
+        addresses = [(nameserver, port)]
+    else:
+        try:
+            addresses = [
+                (addr[0], addr[1])
+                for _, _, _, _, addr in socket.getaddrinfo(
+                    nameserver, port=port, proto=socket.IPPROTO_UDP
+                )
+            ]
+        except socket.gaierror as err:
+            raise SaltConfigurationError(
+                f"Nameserver {nameserver} not found: {err}"
+            ) from err
+
     update = Update(zone)
 
     if tsig:
@@ -142,16 +142,25 @@ def _update(zone, nameserver, port=53, timeout=10, tsig=None, verify=True, **kwa
 
     yield update
 
-    answer = dns.query.tcp(update, nameserver, timeout, port)
-    rcode = answer.rcode()
+    error = None
+    for addr, port in addresses:
+        try:
+            answer = dns.query.tcp(update, addr, timeout, port)
+            break
+        except OSError as err:
+            error = err
+            _LOG.warning("Failed to update %s@%s: %s", addr, port, err)
+    else:
+        raise CommandExecutionError(f"Failed to update nameserver: {error}")
 
+    rcode = answer.rcode()
     if rcode != NOERROR:
         raise CommandExecutionError(
             f"DNS update for {zone} failed: {dns.rcode.to_text(rcode)}"
         )
 
     if verify:
-        _verify(nameserver, port, zone, **kwargs)
+        _verify(addr, port, zone, **kwargs)
 
 
 def install(name, tokens, ttl=120, **kwargs):

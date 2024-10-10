@@ -24,7 +24,7 @@ gitfs_remotes:
 
 The execution modules usually are used on the master too. Please synchronize the modules and runners on the master with `salt-run`:
 
-```
+```console
 $ salt-run saltutil.sync_all
 modules:
     - modules.acme
@@ -98,7 +98,7 @@ peer_run:
     - acme.sign
 ```
 
-The runner can validation signing requests using an authorization file. This file defines which minion is allowed to requests a domain:
+The runner can validation signing requests using an authorization file. This file defines which minion is allowed to request a domain:
 
 ```yaml
 # /etc/salt/master
@@ -123,7 +123,7 @@ Minion IDs and domain names are matched with a glob-style pattern using [`fnmatc
 
 The `acme.sign` execution modules uses other modules to install and remove challenges. These resolver modules must implement a common interface:
 
-An `install` and `remove` function, both accepting a `name`, a list of `tokens` and additional arguments, passed from the resolver configuration. The `tokens` arguments is a list of `{"name": "example.org", "token": "abc....def"}` dicts.
+An `install` and `remove` function, both accepting a `name`, a list of `tokens` and additional arguments, passed from the resolver configuration. The `tokens` arguments is a list of `{"name": "example.org", "token": "abc....def"}` dictionaries.
 
 The following resolvers are included in this repository.
 
@@ -140,13 +140,13 @@ acme:
       module: acme_dns
 
       # Which name server to use
-      nameserver: 127.0.0.153  # required
+      nameserver: 127.0.0.153  # required; can be domain name
       port: 53
 
       # Zone
       #
-      # Zone to update. If not given, the resolver name (above)
-      # is used as zone name.
+      # Zone to update. If not given, the resolver name
+      # (here: example.org) will be used as the zone name.
       zone: example.org
 
       # Alias mode
@@ -168,7 +168,7 @@ acme:
 
       # Verify DNS record propagation
       #
-      # This will check all nameserver listed in the zone to
+      # This will check all nameservers listed in the zone to
       # have at least the serial from the update in their SOA
       # records.
       verify: True

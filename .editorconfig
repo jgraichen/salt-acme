@@ -7,7 +7,7 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{yml,sls}]
+[*.{yml,sls,md}]
 indent_size = 2
 
 [acme/init.sls]

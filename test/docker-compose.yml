@@ -10,6 +10,8 @@ services:
       - 127.0.0.1:15000:15000  # HTTPS Management API
       - 127.0.0.153:53:53/tcp  # DNS
       - 127.0.0.153:53:53/udp  # DNS
+      - 127.0.0.1:5300:53/tcp  # DNS
+      - 127.0.0.1:5300:53/udp  # DNS
   knot:
     image: cznic/knot:3.4
     command: knotd
