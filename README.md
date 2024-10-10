@@ -4,7 +4,7 @@ Manage TLS certificates with ACME using the salt master for certificate
 management and authentication.
 
 All cryptographic operations are handled by `salt-pki`. Signing requests are
-send to a runner on the salt master, e.g. `acme.sign`.
+sent to a runner on the salt master, e.g. `acme.sign`.
 
 The runner can authenticate the minion and check if it is permitted to request
 certificates for a given domain.
@@ -22,7 +22,7 @@ gitfs_remotes:
       - base: v1.0.1
 ```
 
-The execution modules usually are used on the master too. Please synchronize the modules and runners on the master with `salt-run`:
+The execution modules are usually used on the master too. Please synchronize the modules and runners on the master with `salt-run`:
 
 ```console
 $ salt-run saltutil.sync_all
@@ -82,8 +82,6 @@ acme:
 ## Execution modules
 
 The `acme.sign` execution modules accepts a single CSR as arguments and returns an answer with the certificate chain embedded. It can be run on a minion, as well as on the master, e.g. using the runner below. Please note that execution modules must be properly synced on the master using `salt-run saltutil.sync_modules`.
-
-(TODO)
 
 ## Runners
 
