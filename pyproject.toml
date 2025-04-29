@@ -24,4 +24,11 @@ docstring-code-format = true
 extend-select = ["I"]
 
 [tool.uv]
-dev-dependencies = ["matchlib", "pytest", "ruff", "tox"]
+dev-dependencies = [
+    "matchlib",
+    "pytest",
+    "ruff",
+    "tox",
+    "tox-uv>=1.25.0",
+    "uv<0.6.0",
+]
