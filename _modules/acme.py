@@ -13,6 +13,7 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+from typing import List
 
 from salt.exceptions import SaltConfigurationError
 
@@ -32,6 +33,7 @@ except ImportError:
 
 try:
     from acme import challenges, client, messages  # pylint: disable=import-self
+    from acme.errors import ValidationError
 except ImportError:
     _MISSING_IMPORTS.append("acme")
 
@@ -207,7 +209,20 @@ def sign(csr):
 
         logging.debug("Finalizing order...")
         deadline = datetime.now() + timedelta(seconds=300)
-        order = acme.client.poll_and_finalize(orderr, deadline)
+        try:
+            order = acme.client.poll_and_finalize(orderr, deadline)
+        except ValidationError as e:
+            for authz in e.failed_authzrs:
+                challenges: List[messages.ChallengeBody] = authz.body.challenges
+                for challb in challenges:
+                    logging.error(
+                        "Challenge for %s failed: %s: %s",
+                        authz.body.identifier.value,
+                        challb.error.typ,
+                        challb.error.detail,
+                    )
+            raise e
+
         return {"text": order.fullchain_pem}
     finally:
         for resolver in grouped.keys():

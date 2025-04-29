@@ -3,8 +3,14 @@
 # pylint: disable=redefined-outer-name
 
 
+import logging
+
+import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+
+import acme
+import acme.errors
 
 
 def test_sign(minion):
@@ -33,3 +39,17 @@ def test_sign_wildcard(minion):
     )
 
     assert isinstance(crt, x509.Certificate)
+
+
+def test_sign_validation_error(minion, caplog):
+    with open("test/fixtures/validation-error.csr", "r") as f:
+        csr = f.read()
+
+    with caplog.at_level(logging.ERROR):
+        with pytest.raises(acme.errors.ValidationError):
+            minion.mods["acme.sign"](csr)
+
+    assert (
+        "Challenge for missing.alias.example.com failed: urn:ietf:params:acme:error:"
+        in caplog.text
+    )

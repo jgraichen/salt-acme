@@ -16,3 +16,12 @@ acme:
       module: acme_dns
       nameserver: 127.0.0.153
       tsig: hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=
+
+    # Fake alias these to test validation errors since there is no CNAME
+    # from `*.alias.example.com` to `acme.example.org`.
+    alias.example.com:
+      module: acme_dns
+      nameserver: 127.0.0.153
+      zone: example.org.
+      alias: example.org.
+      tsig: hmac-sha256:acme:opCLn9NMrbY0xKB8lWs2KM2lgQsEW5LdvsVtxnoRJIo=

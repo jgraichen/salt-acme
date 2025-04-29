@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Log validation error details in salt log
+
 ## [1.3.0] - 2024-10-10
 
 ### Added
