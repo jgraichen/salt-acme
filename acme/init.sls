@@ -3,7 +3,6 @@
 
 import os
 
-
 basedir = __salt__["pillar.get"]("acme:basedir", "/etc/acme")
 default = __salt__["pillar.get"]("acme:default", {})
 certs = __salt__["pillar.get"]("acme:certificate", {})
