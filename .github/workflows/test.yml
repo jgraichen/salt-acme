@@ -6,6 +6,10 @@ on:
   - pull_request
   - workflow_dispatch
 
+env:
+  PY_COLORS: "1"
+  FORCE_COLOR: true
+
 jobs:
   Test:
     runs-on: ubuntu-24.04
