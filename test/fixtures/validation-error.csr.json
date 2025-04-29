@@ -1,0 +1,11 @@
+{
+    "hosts": [
+        "example.com",
+        "missing.alias.example.com"
+    ],
+    "CN": "missing.alias.example.com",
+    "key": {
+        "algo": "ecdsa",
+        "size": 256
+    }
+}
