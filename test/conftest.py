@@ -10,6 +10,7 @@ from subprocess import PIPE, Popen
 
 import pytest
 import salt.config
+import salt.loader
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(os.path.join(ROOT, "test"))
