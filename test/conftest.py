@@ -101,10 +101,18 @@ class knotc:
         self.send(f"zone-set -- {data}")
 
     def send(self, cmd):
+        if not self.process:
+            raise RuntimeError("process not started; __enter__ required")
+        if not self.process.stdin:
+            raise RuntimeError("Invalid process state")
+
         self.process.stdin.write(cmd.encode() + b"\n")
         self.process.stdin.flush()
 
     def __exit__(self, *args):
+        if not self.process:
+            raise RuntimeError("process not started; __enter__ required")
+
         result = self.process.communicate()
         stdout = result[0].decode()
         stderr = result[1].decode()
