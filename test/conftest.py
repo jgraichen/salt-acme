@@ -60,7 +60,7 @@ class Minion(Base):
         )
 
 
-@pytest.yield_fixture(scope="session")
+@pytest.fixture(scope="session")
 def tmpd():
     with tempfile.TemporaryDirectory() as d:
         yield d
