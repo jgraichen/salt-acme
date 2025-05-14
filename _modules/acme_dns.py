@@ -11,6 +11,7 @@ import logging
 import socket
 import time
 from contextlib import contextmanager
+from typing import Optional
 
 try:
     import dns
@@ -117,13 +118,21 @@ def _verify(address, port, zone, verify_timeout=120, **_kwargs):
 
 
 @contextmanager
-def _update(zone, nameserver, port=53, timeout=10, tsig=None, verify=True, **kwargs):
+def _update(
+    zone: str,
+    nameserver: str,
+    port: int = 53,
+    timeout: int = 10,
+    tsig: Optional[str] = None,
+    verify: bool = True,
+    **kwargs,
+):
     if dns.inet.is_address(nameserver):
         addresses = [(nameserver, port)]
     else:
         try:
             addresses = [
-                (addr[0], addr[1])
+                (str(addr[0]), int(addr[1]))
                 for _, _, _, _, addr in socket.getaddrinfo(
                     nameserver, port=port, proto=socket.IPPROTO_UDP
                 )
