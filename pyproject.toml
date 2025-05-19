@@ -5,7 +5,7 @@ authors = [{ name = "Jan Graichen", email = "jgraichen@altimos.de" }]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
-dependencies = ["salt<3007.2", "acme", "cryptography", "dnspython~=2.0"]
+dependencies = ["salt<3007.3", "acme", "cryptography", "dnspython~=2.0"]
 
 [tool.pyright]
 include = ["salt_tower", "test"]
