@@ -30,5 +30,5 @@ dev-dependencies = [
     "ruff",
     "tox",
     "tox-uv>=1.25.0",
-    "uv<0.6.0",
+    "uv<0.7.13",
 ]
