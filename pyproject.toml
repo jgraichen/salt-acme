@@ -8,18 +8,14 @@ license = { text = "MIT" }
 dependencies = ["salt", "acme", "cryptography", "dnspython~=2.0"]
 
 [dependency-groups]
-test = [
-  "matchlib",
-  "pytest==8.4.2",
-]
-lint = [
-  "ruff==0.12.12",
-]
 dev = [
-  "nox>=2025.5.1",
-  { include-group = "test" },
   { include-group = "lint" },
+  { include-group = "nox" },
+  { include-group = "test" },
 ]
+lint = ["ruff==0.12.12"]
+nox = ["nox>=2025.5.1"]
+test = ["matchlib", "pytest==8.4.2"]
 
 [tool.pyright]
 include = ["salt_tower", "test"]

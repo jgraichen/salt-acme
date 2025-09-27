@@ -39,7 +39,7 @@ jobs:
         env:
           PEBBLE_VERSION: ${{ matrix.pebble }}
 
-      - run: uv sync --dev
+      - run: uv sync --only-group=nox
       - run: uv run nox --session 'test(salt="${{ matrix.salt }}")' -- -vv
 
   ruff-check:
