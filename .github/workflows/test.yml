@@ -40,7 +40,7 @@ jobs:
           PEBBLE_VERSION: ${{ matrix.pebble }}
 
       - run: uv sync --dev
-      - run: uv run nox --session 'test(salt="${{ matrix.salt }}")' -- -vv
+      - run: uv run nox --session 'test(salt=${{ matrix.salt }})' -- -vv
 
   ruff-check:
     runs-on: ubuntu-24.04

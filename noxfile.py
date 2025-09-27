@@ -3,8 +3,8 @@ from nox import Session
 
 
 @nox.session
-@nox.parametrize("salt", ["3006", "3007"])
-def test(s: Session, salt: str) -> None:
+@nox.parametrize("salt", [3006, 3007])
+def test(s: Session, salt: int) -> None:
     s.install(
         "--verbose",
         ".",
