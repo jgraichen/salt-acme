@@ -5,7 +5,21 @@ authors = [{ name = "Jan Graichen", email = "jgraichen@altimos.de" }]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = { text = "MIT" }
-dependencies = ["salt<3007.8", "acme", "cryptography", "dnspython~=2.0"]
+dependencies = ["salt", "acme", "cryptography", "dnspython~=2.0"]
+
+[dependency-groups]
+test = [
+  "matchlib",
+  "pytest==8.4.2",
+]
+lint = [
+  "ruff==0.12.12",
+]
+dev = [
+  "nox>=2025.5.1",
+  { include-group = "test" },
+  { include-group = "lint" },
+]
 
 [tool.pyright]
 include = ["salt_tower", "test"]
@@ -24,11 +38,6 @@ docstring-code-format = true
 extend-select = ["I"]
 
 [tool.uv]
-dev-dependencies = [
-    "matchlib",
-    "pytest",
-    "ruff",
-    "tox",
-    "tox-uv>=1.25.0",
-    "uv<0.6.0",
-]
+# Salt's legacy setup.py requires old setuptools. Since uv 0.6.0, it
+# does not fall back to reading requirements from egg-info.
+build-constraint-dependencies = ["setuptools==75.5.0"]

@@ -17,50 +17,59 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: '3.10'
-            env: py3-salt3007-crypt-acme-dns
+          - salt: "3007"
+            python: "3.10"
             pebble: latest
-          - python: '3.10'
-            env: py3-salt3006-crypt-acme-dns
+          - salt: "3006"
+            python: "3.10"
             pebble: latest
 
     steps:
       - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: True
+
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: True
+
       - run: docker compose --file test/docker-compose.yml up --detach
         env:
           PEBBLE_VERSION: ${{ matrix.pebble }}
 
       - run: uv sync --dev
-      - run: uv run tox -e ${{ matrix.env }} -- -vv
+      - run: uv run nox --session 'test(salt="${{ matrix.salt }}")' -- -vv
 
   ruff-check:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: True
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - run: uv sync --dev
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: True
+
+      - run: uv sync --only-group=lint
       - run: uv run ruff check --no-fix --diff
 
   ruff-format:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: True
+
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - run: uv sync --dev
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: True
+
+      - run: uv sync --only-group=lint
       - run: uv run ruff format --diff --check
