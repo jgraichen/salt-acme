@@ -32,8 +32,9 @@ except ImportError:
     _MISSING_IMPORTS.append("josepy")
 
 try:
-    from acme import challenges, client, messages  # pylint: disable=import-self
     from acme.errors import ValidationError
+
+    from acme import challenges, client, messages  # pylint: disable=import-self
 except ImportError:
     _MISSING_IMPORTS.append("acme")
 

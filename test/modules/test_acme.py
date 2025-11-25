@@ -5,12 +5,12 @@
 
 import logging
 
+import acme.errors
 import pytest
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
 import acme
-import acme.errors
 
 
 def test_sign(minion):
