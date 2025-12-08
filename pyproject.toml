@@ -10,7 +10,7 @@ dependencies = ["salt", "acme", "cryptography", "dnspython~=2.0"]
 [dependency-groups]
 test = [
   "matchlib",
-  "pytest==9.0.1",
+  "pytest==9.0.2",
 ]
 lint = [
   "ruff==0.14.7",
