@@ -33,7 +33,7 @@ jobs:
         with:
           enable-cache: True
 
-      - run: docker compose --file test/docker-compose.yml up --detach
+      - run: docker compose up --detach
       - run: uv sync --dev
       - run: uv run nox --session 'test(salt=${{ matrix.salt }})' -- -vv
 
