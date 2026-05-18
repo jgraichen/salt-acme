@@ -19,10 +19,8 @@ jobs:
         include:
           - salt: "3007"
             python: "3.10"
-            pebble: latest
           - salt: "3006"
             python: "3.10"
-            pebble: latest
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -36,9 +34,6 @@ jobs:
           enable-cache: True
 
       - run: docker compose --file test/docker-compose.yml up --detach
-        env:
-          PEBBLE_VERSION: ${{ matrix.pebble }}
-
       - run: uv sync --dev
       - run: uv run nox --session 'test(salt=${{ matrix.salt }})' -- -vv
 

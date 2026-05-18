@@ -1,17 +1,17 @@
 services:
   pebble:
-    image: ghcr.io/letsencrypt/pebble:${PEBBLE_VERSION:-2.6.0}
+    image: ghcr.io/letsencrypt/pebble:2.10.1
     command: -dnsserver 127.0.0.153:53
     environment:
       PEBBLE_AUTHZREUSE: 0
       PEBBLE_WFE_NONCEREJECT: 0
     ports:
-      - 127.0.0.1:14000:14000  # HTTPS ACME API
-      - 127.0.0.1:15000:15000  # HTTPS Management API
-      - 127.0.0.153:53:53/tcp  # DNS
-      - 127.0.0.153:53:53/udp  # DNS
-      - 127.0.0.1:5300:53/tcp  # DNS
-      - 127.0.0.1:5300:53/udp  # DNS
+      - 127.0.0.1:14000:14000 # HTTPS ACME API
+      - 127.0.0.1:15000:15000 # HTTPS Management API
+      - 127.0.0.153:53:53/tcp # DNS
+      - 127.0.0.153:53:53/udp # DNS
+      - 127.0.0.1:5300:53/tcp # DNS
+      - 127.0.0.1:5300:53/udp # DNS
   knot:
     image: cznic/knot:3.4
     command: knotd
