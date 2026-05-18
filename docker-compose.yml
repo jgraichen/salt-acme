@@ -1,5 +1,7 @@
 # Development and testing environment for salt-acme. The python tests
 # run against these services, at the configured ports.
+name: salt-acme
+
 services:
   pebble:
     image: ghcr.io/letsencrypt/pebble:2.10.1
