@@ -1,6 +1,9 @@
 import nox
 from nox import Session
 
+# Reuse virtualenvs to speed up subsequent runs.
+nox.options.reuse_existing_virtualenvs = True
+
 
 @nox.session
 @nox.parametrize("salt", [3006, 3007])
