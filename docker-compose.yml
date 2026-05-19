@@ -9,6 +9,7 @@ services:
     environment:
       PEBBLE_AUTHZREUSE: 0
       PEBBLE_WFE_NONCEREJECT: 0
+      PEBBLE_VA_NOSLEEP: ${PEBBLE_VA_NOSLEEP:-1}
     ports:
       - 127.0.0.1:14000:14000 # HTTPS ACME API
       - 127.0.0.1:15000:15000 # HTTPS Management API

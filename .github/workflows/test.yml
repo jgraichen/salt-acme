@@ -34,6 +34,11 @@ jobs:
           enable-cache: True
 
       - run: docker compose up --detach
+        env:
+          # Enable sleeping in Pebble to ensure that the tests properly
+          # wait for the expected state instead of racing ahead.
+          PEBBLE_VA_NOSLEEP: "0"
+
       - run: uv sync --dev
       - run: uv run nox --session 'test(salt=${{ matrix.salt }})' -- -vv
 
