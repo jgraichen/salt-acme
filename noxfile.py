@@ -6,14 +6,13 @@ nox.options.reuse_existing_virtualenvs = True
 
 
 @nox.session
-@nox.parametrize("salt", [3006, 3007])
+@nox.parametrize("salt", [3006, 3007, 3008])
 def test(s: Session, salt: int) -> None:
     s.install(
         "--verbose",
         ".",
         f"salt~={salt}.0",
         "--group=test",
-        env={"PIP_CONSTRAINT": "test/constraints.txt"},
     )
 
     s.run("pip", "list")
