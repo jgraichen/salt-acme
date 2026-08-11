@@ -3,8 +3,26 @@
 
 import os
 
+try:
+    from salt.utils.secret import mask_pillar
+except ImportError:
+    # Salt < 3008 does not mask pillar values.
+    mask_pillar = None
+
 
 def run():
+    # Salt >= 3008 masks pillar values by default; the template renderers
+    # disable masking while rendering an SLS file, but the `py` renderer does
+    # not, so `pillar.get` would return `**********` for every value here.
+    token = mask_pillar.set(False) if mask_pillar else None
+    try:
+        return _run()
+    finally:
+        if token is not None:
+            mask_pillar.reset(token)
+
+
+def _run():
     basedir = __salt__["pillar.get"]("acme:basedir", "/etc/acme")
     default = __salt__["pillar.get"]("acme:default", {})
     certs = __salt__["pillar.get"]("acme:certificate", {})
