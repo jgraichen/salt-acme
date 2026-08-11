@@ -6,7 +6,7 @@ nox.options.reuse_existing_virtualenvs = True
 
 
 @nox.session
-@nox.parametrize("salt", [3006, 3007])
+@nox.parametrize("salt", [3006, 3007, 3008])
 def test(s: Session, salt: int) -> None:
     s.install(
         "--verbose",
