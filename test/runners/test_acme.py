@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 # pylint: disable=redefined-outer-name
 
@@ -78,12 +77,14 @@ def test_sign_authorize(runner, tmpdir):
     def fxcmd(*_args):
         return True
 
-    with patch.dict(
-        runner.opts,
-        {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
+    with (
+        patch.dict(
+            runner.opts,
+            {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
+        ),
+        _patch_cmd(runner, fxcmd),
     ):
-        with _patch_cmd(runner, fxcmd):
-            assert runner["acme.sign"](read_fixture("example.csr"))
+        assert runner["acme.sign"](read_fixture("example.csr"))
 
 
 def test_sign_authorize_multiple_rules(runner, tmpdir):
@@ -105,12 +106,14 @@ def test_sign_authorize_multiple_rules(runner, tmpdir):
     def fxcmd(*_args):
         return True
 
-    with patch.dict(
-        runner.opts,
-        {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
+    with (
+        patch.dict(
+            runner.opts,
+            {"id": "minion", "acme": {"runner": {"auth_file": auth_file}}},
+        ),
+        _patch_cmd(runner, fxcmd),
     ):
-        with _patch_cmd(runner, fxcmd):
-            assert runner["acme.sign"](read_fixture("example.csr"))
+        assert runner["acme.sign"](read_fixture("example.csr"))
 
 
 def test_sign_reject_unauthorized(runner, tmpdir):
