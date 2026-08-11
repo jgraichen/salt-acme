@@ -13,7 +13,6 @@ def test(s: Session, salt: int) -> None:
         ".",
         f"salt~={salt}.0",
         "--group=test",
-        env={"PIP_CONSTRAINT": "test/constraints.txt"},
     )
 
     s.run("pip", "list")
