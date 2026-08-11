@@ -1,5 +1,5 @@
 ---
-name: maintenance-workflow-cleanup
+name: "Maintenance: Clean up workflows"
 on:
   schedule:
     - cron: "0 0 1 * *"

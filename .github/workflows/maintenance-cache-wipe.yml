@@ -1,5 +1,5 @@
 ---
-name: maintenance-cache-clear
+name: "Maintenance: Clear caches"
 on:
   schedule:
     - cron: "0 0 1 * *"
