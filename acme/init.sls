@@ -1,63 +1,80 @@
-#!pydsl
+#!py
 # vim: ft=python:sw=4
 
 import os
 
-basedir = __salt__["pillar.get"]("acme:basedir", "/etc/acme")
-default = __salt__["pillar.get"]("acme:default", {})
-certs = __salt__["pillar.get"]("acme:certificate", {})
 
-for name in certs.keys():
-    certdir = os.path.join(basedir, name)
+def run():
+    basedir = __salt__["pillar.get"]("acme:basedir", "/etc/acme")
+    default = __salt__["pillar.get"]("acme:default", {})
+    certs = __salt__["pillar.get"]("acme:certificate", {})
 
-    cert = __salt__["pillar.get"](f"acme:certificate:{name}", default, merge=True)
+    ret = {}
+    includes = []
 
-    if "domains" not in cert:
-        cert["domains"] = [name]
+    for name in certs.keys():
+        certdir = os.path.join(basedir, name)
 
-    create_directories = cert.pop("create_directories", True)
+        cert = __salt__["pillar.get"](f"acme:certificate:{name}", default, merge=True)
 
-    keyargs = {"require": []}
-    fileargs = {"mode": 640}
+        if "domains" not in cert:
+            cert["domains"] = [name]
 
-    if "key" in cert:
-        keyargs.update(cert.pop("key"))
+        create_directories = cert.pop("create_directories", True)
 
-    for k in ("mode", "user", "group"):
-        if k in keyargs:
-            fileargs[k] = keyargs.pop(k)
+        keyargs = {"require": []}
+        fileargs = {"mode": 640}
 
-    cert_name = os.path.join(certdir, cert.pop("name", "fullchain.pem"))
-    pkey_name = os.path.join(certdir, keyargs.pop("name", "privkey.pem"))
+        if "key" in cert:
+            keyargs.update(cert.pop("key"))
 
-    cert_file = cert_name.format(name=name)
-    pkey_file = pkey_name.format(name=name)
+        for k in ("mode", "user", "group"):
+            if k in keyargs:
+                fileargs[k] = keyargs.pop(k)
 
-    pkey_dir = os.path.dirname(pkey_file)
-    cert_dir = os.path.dirname(cert_file)
+        cert_name = os.path.join(certdir, cert.pop("name", "fullchain.pem"))
+        pkey_name = os.path.join(certdir, str(keyargs.pop("name", "privkey.pem")))
 
-    if create_directories:
-        state(pkey_dir).file.directory(makedirs=True)
-        state(cert_dir).file.directory(makedirs=True)
+        cert_file = cert_name.format(name=name)
+        pkey_file = pkey_name.format(name=name)
 
-    keyargs["require"].append({"file": pkey_dir})
+        pkey_dir = os.path.dirname(pkey_file)
+        cert_dir = os.path.dirname(cert_file)
 
-    state(pkey_file).pki.private_key(**keyargs)
-    state(pkey_file).file.managed(
-        replace=False, require=[{"pki": pkey_file}], **fileargs
-    )
+        if create_directories:
+            ret[pkey_dir] = {"file": ["directory", {"makedirs": True}]}
+            ret[cert_dir] = {"file": ["directory", {"makedirs": True}]}
 
-    if "include" in cert:
-        for i in cert.pop("include", []):
-            include(i)
+        keyargs["require"].append({"file": pkey_dir})
 
-    cert["key"] = pkey_file
+        ret[pkey_file] = {
+            "pki": ["private_key", *[{k: v} for k, v in keyargs.items()]],
+            "file": [
+                "managed",
+                {"replace": False},
+                {"require": [{"pki": pkey_file}]},
+                *[{k: v} for k, v in fileargs.items()],
+            ],
+        }
 
-    if "require" not in cert:
-        cert["require"] = []
+        for include in cert.pop("include", []):
+            if include not in includes:
+                includes.append(include)
 
-    cert["require"].append({"pki": pkey_file})
-    cert["require"].append({"file": pkey_file})
-    cert["require"].append({"file": cert_dir})
+        cert["key"] = pkey_file
 
-    state(cert_file).pki.certificate(**cert)
+        if "require" not in cert:
+            cert["require"] = []
+
+        cert["require"].append({"pki": pkey_file})
+        cert["require"].append({"file": pkey_file})
+        cert["require"].append({"file": cert_dir})
+
+        ret[cert_file] = {
+            "pki": ["certificate", *[{k: v} for k, v in cert.items()]],
+        }
+
+    if includes:
+        ret["include"] = includes
+
+    return ret
