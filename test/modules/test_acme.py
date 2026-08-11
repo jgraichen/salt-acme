@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 # pylint: disable=redefined-outer-name
 
@@ -45,9 +44,8 @@ def test_sign_validation_error(minion, caplog):
     with open("test/fixtures/validation-error.csr", "r") as f:
         csr = f.read()
 
-    with caplog.at_level(logging.ERROR):
-        with pytest.raises(acme.errors.ValidationError):
-            minion.mods["acme.sign"](csr)
+    with caplog.at_level(logging.ERROR), pytest.raises(acme.errors.ValidationError):
+        minion.mods["acme.sign"](csr)
 
     assert (
         "Challenge for missing.alias.example.com failed: urn:ietf:params:acme:error:"

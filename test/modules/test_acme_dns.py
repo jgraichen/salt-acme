@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 # pylint: disable=redefined-outer-name
 
@@ -79,10 +78,9 @@ def test_remove(minion, resolver: Resolver):
     """
     Removes only given challenges from zone.
     """
-    with knotc() as knot:
-        with knot.zone_edit("example.com."):
-            knot.set('_acme-challenge 120 TXT "value-1"')
-            knot.set('_acme-challenge 120 TXT "value-2"')
+    with knotc() as knot, knot.zone_edit("example.com."):
+        knot.set('_acme-challenge 120 TXT "value-1"')
+        knot.set('_acme-challenge 120 TXT "value-2"')
 
     minion.mods["acme_dns.remove"](
         "example.com",
@@ -95,9 +93,8 @@ def test_remove(minion, resolver: Resolver):
 
 
 def test_remove_zone(minion, resolver: Resolver):
-    with knotc() as knot:
-        with knot.zone_edit("example.com"):
-            knot.set('_acme-challenge 120 TXT "secret"')
+    with knotc() as knot, knot.zone_edit("example.com"):
+        knot.set('_acme-challenge 120 TXT "secret"')
 
     minion.mods["acme_dns.remove"](
         "default",
@@ -111,9 +108,8 @@ def test_remove_zone(minion, resolver: Resolver):
 
 
 def test_remove_tsig(minion, resolver: Resolver):
-    with knotc() as knot:
-        with knot.zone_edit("example.org"):
-            knot.set('_acme-challenge 120 TXT "secret"')
+    with knotc() as knot, knot.zone_edit("example.org"):
+        knot.set('_acme-challenge 120 TXT "secret"')
 
     minion.mods["acme_dns.remove"](
         "example.org",
@@ -127,9 +123,8 @@ def test_remove_tsig(minion, resolver: Resolver):
 
 
 def test_remove_alias(minion, resolver: Resolver):
-    with knotc() as knot:
-        with knot.zone_edit("example.com"):
-            knot.set('acme 120 TXT "secret"')
+    with knotc() as knot, knot.zone_edit("example.com"):
+        knot.set('acme 120 TXT "secret"')
 
     minion.mods["acme_dns.remove"](
         "example.com",

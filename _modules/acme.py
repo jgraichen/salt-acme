@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 """
 Sign CSRs using the ACMEv2 protocol
@@ -13,7 +12,6 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import List
 
 from salt.exceptions import SaltConfigurationError
 
@@ -189,7 +187,7 @@ def sign(csr):
     for authz in pending:
         identifier = authz.body.identifier.value
         labels = identifier.split(".")
-        for i in range(0, len(labels)):
+        for i in range(len(labels)):
             name = ".".join(labels[i:])
             if name in resolvers:
                 grouped[resolvers[name]].append(authz)
@@ -214,7 +212,7 @@ def sign(csr):
             order = acme.client.poll_and_finalize(orderr, deadline)
         except ValidationError as e:
             for authz in e.failed_authzrs:
-                challenges: List[messages.ChallengeBody] = authz.body.challenges
+                challenges: list[messages.ChallengeBody] = authz.body.challenges
                 for challb in challenges:
                     logging.error(
                         "Challenge for %s failed: %s: %s",

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # pylint: disable=missing-docstring
 # pyright: reportUnboundVariable=false
 """
@@ -11,7 +10,6 @@ import logging
 import socket
 import time
 from contextlib import contextmanager
-from typing import Optional
 
 try:
     import dns
@@ -123,7 +121,7 @@ def _update(
     nameserver: str,
     port: int = 53,
     timeout: int = 10,
-    tsig: Optional[str] = None,
+    tsig: str | None = None,
     verify: bool = True,
     **kwargs,
 ):
