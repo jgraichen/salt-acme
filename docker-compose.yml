@@ -19,7 +19,7 @@ services:
       - 127.0.0.1:5300:53/udp # DNS
 
   knot:
-    image: cznic/knot:3.5@sha256:71ce136cdabbda3285fa35c81def1b721aa8e2c7884da2474370915d395623b7
+    image: cznic/knot:3.6@sha256:166fd8956f1a69eeb6558c28f65cedb4ea112d4689317f4a50c2f2787ee6a622
     command: knotd
     network_mode: service:pebble
     volumes:
